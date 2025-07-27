@@ -106,6 +106,9 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/perusahaan/store', [DudiController::class, 'storeInput'])->name('siswa.dudi.store');
         Route::post('/siswa/isDitolak', [PengajuanSuratController::class, 'isDitolak'])->name('siswa.pengajuan.isDitolak');
         Route::post('/siswa/cekPengajuan', [PengajuanSuratController::class, 'cekPengajuan'])->name('siswa.pengajuan.cekPengajuan');
+        Route::get('/instruktur/search', [SearchController::class, 'searchInstruktur'])->name('siswa.instruktur.search');
+
+        Route::post('/siswa/diTempatkan', [PengajuanSuratController::class, 'diTempatkan'])->name('siswa.pengajuan.isTempatkan');
 
 
 
@@ -144,7 +147,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::put('/pengajuan-surat/{id}', [PengajuanSuratController::class, 'update'])->name('pengajuan.surat.update');
         Route::delete('/pengajuan-surat/{id}', [PengajuanSuratController::class, 'delete'])->name('pengajuan.surat.delete');
         Route::put('/pengajuan-surat/reject/{id}', [PengajuanSuratController::class, 'reject'])->name('pengajuan.surat.reject');
-        Route::put('/pengajuan/surat/approve/{id}', [PengajuanSuratController::class, 'approve'])->name('pengajuan.surat.approve');
+        Route::post('/pengajuan/surat/approve', [PengajuanSuratController::class, 'approve'])->name('pengajuan.surat.approve');
 
 
 

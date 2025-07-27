@@ -24,7 +24,7 @@ class SuratController extends Controller
             $item->nama = Siswa::where('nis', $item->nim)->first()->nama;
         });
 
-        
+
 
         // Load the view and pass data to it
         $pdf = Pdf::loadView('pkl.pengajuan-surat.surat', compact('surat', 'siswa'));

@@ -20,7 +20,8 @@ class Pengajuan extends Model
         'tanggal_mulai',
         'tanggal_selesai',
         'kepada_yth',
-        'file_balasan_path'
+        'file_balasan_path',
+        'no_surat'
     ];
 
     // protected $table = 'pengajuan_surat';

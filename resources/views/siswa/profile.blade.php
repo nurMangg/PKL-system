@@ -462,7 +462,18 @@
                                                     <div class="col position-relative" style="min-width: 0">
                                                         <select id="nis1" class="form-select w-100 siswa-select"
                                                             style="max-width: 100%; overflow: hidden; text-overflow: ellipsis;"
-                                                            name="namaSiswa[]" required></select>
+                                                            name="namaSiswa" required readonly disabled>
+                                                            <option value="{{ $siswa->nis }}" selected>
+                                                                {{ $siswa->nis }} - {{ $siswa->nama }}
+                                                            </option>
+                                                        </select>
+                                                        <select id="nis1" class="form-select w-100 siswa-select"
+                                                            style="max-width: 100%; overflow: hidden; text-overflow: ellipsis;"
+                                                            name="namaSiswa[]" required readonly hidden>
+                                                            <option value="{{ $siswa->nis }}" selected>
+                                                                {{ $siswa->nis }} - {{ $siswa->nama }}
+                                                            </option>
+                                                        </select>
                                                     </div>
                                                     <div class="col-auto ps-0">
                                                         <button type="button"
@@ -498,12 +509,12 @@
                                             <div class="mb-3">
                                                 <label for="tanggalMulai" class="form-label">Tanggal Mulai</label>
                                                 <input type="date" class="form-control" id="tanggalMulai"
-                                                    name="tanggal_mulai" required>
+                                                    name="tanggal_mulai" required min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}">
                                             </div>
                                             <div class="mb-3">
                                                 <label for="tanggalSelesai" class="form-label">Tanggal Selesai</label>
                                                 <input type="date" class="form-control" id="tanggalSelesai"
-                                                    name="tanggal_selesai" required>
+                                                    name="tanggal_selesai" required min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}">
                                             </div>
 
                                             <button type="submit" class="btn btn-primary w-100">Simpan</button>
@@ -564,12 +575,7 @@
                                                     required>
                                                 <input type="hidden" id="dudi_longitude" name="longitude">
                                             </div>
-                                            <div class="mb-3">
-                                                <label for="dudi_radius" class="form-label">Radius (meter)</label>
-                                                <input type="number" class="form-control" id="dudi_radius"
-                                                    name="radius" placeholder="Masukkan radius dalam meter" required
-                                                    value="8">
-                                            </div>
+
                                         </div>
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary"
@@ -734,6 +740,14 @@
                             <input type="file" class="form-control" name="file" id="file"
                                 accept=".pdf,.doc,.docx,.png,." required>
                         </div>
+                        <div class="mb-3">
+                            <label for="instruktur_id" class="form-label">Pilih Instruktur</label>
+                            <select class="form-control" id="instruktur_id" name="instruktur_id" style="width: 100%;">
+                                <option value="">-- Pilih Instruktur --</option>
+                            </select>
+                            <div class="invalid-feedback"> Instruktur wajib dipilih. </div>
+                        </div>
+
                         <button type="submit" class="btn btn-primary">Upload</button>
                     </form>
                 </div>
@@ -813,6 +827,37 @@
             }
         });
     </script>
+
+<script>
+    $(document).ready(function() {
+        $('#instruktur_id').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Pilih Instruktur',
+            allowClear: true,
+            ajax: {
+                url: "{{ route('siswa.instruktur.search') }}",
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        q: params.term
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: $.map(data.results, function(item) {
+                            return {
+                                id: item.id_instruktur,
+                                text: item.nama
+                            }
+                        })
+                    };
+                },
+                cache: true
+            }
+        });
+    });
+</script>
 
     <!-- validasi tanggal PKL -->
     <script>
@@ -1880,7 +1925,7 @@
                     data: function(params) {
                         return {
                             q: params.term,
-                            k: 'penempatan',
+                            k: 'presensi',
                         };
                     },
                     processResults: function(data) {
@@ -2016,6 +2061,7 @@
                                         text: 'Surat berhasil ditolak.'
                                     }).then(() => {
                                         // reload datatable jika ada
+                                        $('#pengajuan-surat').DataTable().ajax.reload();
                                         if (typeof $('#pengajuanTable')
                                             .DataTable === 'function') {
                                             $('#pengajuanTable').DataTable()

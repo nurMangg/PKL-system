@@ -41,7 +41,7 @@ class PengajuanSuratController extends Controller
         'tanggal_mulai' => $request->tanggal_mulai,
         'tanggal_selesai' => $request->tanggal_selesai,
         'kepada_yth' => Dudi::where('id_dudi', $request->perusahaan_tujuan)->first()->nama_pimpinan,
-        'status' => 'Pending',
+        'status' => 'Menunggu',
     ]);
 
 
@@ -83,10 +83,14 @@ public function search(Request $request)
             return DataTables::of($pengajuanSurat)
                 ->addIndexColumn() // Tambahkan nomor urut
                 ->editColumn('status', function ($row) {
-                    if ($row->status === 'Approved') {
-                        return '<span class="badge bg-success">Disetujui</span>';
-                    } else if ($row->status === 'Rejected') {
+                    if ($row->status === 'Disetujui') {
+                        return '<span class="badge bg-primary">Disetujui</span>';
+                    } else if ($row->status === 'Diterima') {
+                        return '<span class="badge bg-secondary">Diterima</span>';
+                    } else if ($row->status === 'Ditolak') {
                         return '<span class="badge bg-danger">Ditolak</span>';
+                    } else if ($row->status === 'Ditempatkan') {
+                        return '<span class="badge bg-success">Ditempatkan</span>';
                     } else {
                         return '<span class="badge bg-warning">Menunggu</span>';
                     }
@@ -111,29 +115,17 @@ public function search(Request $request)
                 })
                 ->editColumn('status', function ($row) {
                     $status = Pengajuan::where('id', $row->id_surat)->first()->status;
-                    if ($status === 'Approved') {
-                        $statusText = 'Disetujui';
-                    } elseif ($status === 'Placed') {
-                        $statusText = 'Ditempatkan';
-                    } elseif ($status === 'Pending') {
-                        $statusText = 'Menunggu';
-                    } elseif ($status === 'Rejected') {
-                        $statusText = 'Ditolak';
-                    } else {
-                        $statusText = $status;
-                    }
-
                     // Tambahkan elemen span dengan kelas khusus
-                    if ($statusText === 'Disetujui' || $statusText === 'Ditempatkan') {
-                        return '<span style="color: green; padding: 2px; border-radius: 5px; ">' . $statusText . '</span>';
+                    if ($status === 'Disetujui' || $status === 'Diterima') {
+                        return '<span style="color: green; padding: 2px; border-radius: 5px; ">' . $status . '</span>';
                     }
 
-                    return $statusText;
+                    return $status;
                 })->rawColumns(['status']) // Jangan lupa tambahkan ini jika menggunakan HTML
 
                 ->addColumn('aksi', function ($row) {
                     $pengajuan = Pengajuan::where('id', $row->id_surat)->first();
-                    if ($pengajuan->status === 'Approved' || $pengajuan->status === 'Placed') {
+                    if ($pengajuan->status === 'Disetujui' || $pengajuan->status === 'Diterima') {
                         return '
                             <a class="btn btn-sm btn-success" href="/surat/' . $row->id_surat . '">Download</a>
                         ';
@@ -143,7 +135,7 @@ public function search(Request $request)
                 })
                 ->addColumn('balasan_dudi', function($row) {
                     $pengajuan = Pengajuan::where('id', $row->id_surat)->first();
-                    if ($pengajuan->status === 'Approved' || $pengajuan->status === 'Placed') {
+                    if ($pengajuan->status === 'Disetujui' || $pengajuan->status === 'Diterima') {
                         if($pengajuan->file_balasan_path == null) {
                             return '
                             <div class="d-flex gap-2">
@@ -177,40 +169,71 @@ public function search(Request $request)
         ]);
     }
 
+    public function diTempatkan(Request $request){
+        $validated = $request->validate([
+            'id_pengajuan' => 'nullable|string',
+        ]);
+
+        $pengajuan = Pengajuan::findOrFail($request->id_pengajuan);
+        $pengajuan->update(['status' => 'Ditempatkan']);
+        return response()->json([
+            'status' => true,
+            'message' => 'Data Berhasil Ditempatkan.'
+        ]);
+    }
+
     public function cekPengajuan(Request $request) {
         $validated = $request->validate([
             'nisSiswa' => 'required',
         ]);
 
-        $p_suratDetail = PengajuanDetail::where('nim', $request->nisSiswa)->first();
+        // Ambil semua pengajuan detail untuk siswa ini
+        $pengajuanDetails = PengajuanDetail::where('nim', $request->nisSiswa)->get();
 
-        if (!$p_suratDetail) {
+        if ($pengajuanDetails->isEmpty()) {
             return response()->json([
                 'success' => true,
                 'message' => 'Tidak ada pengajuan sebelumnya. Silakan lanjut.',
             ]);
         }
 
-        // Ambil surat terkait dari tabel Pengajuan
-        $surat = Pengajuan::where('id', $p_suratDetail->id_surat)->first();
-        // dd($surat);
+        // Ambil semua id_surat dari detail
+        $idSuratList = $pengajuanDetails->pluck('id_surat')->toArray();
 
-        if (!$surat) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Data surat tidak ditemukan. Silakan lanjut.',
-            ]);
-        }
+        // Ambil semua surat terkait
+        $suratList = Pengajuan::whereIn('id', $idSuratList)->get();
 
-        // Cek status surat
-        if ($surat->status === 'Approved') {
+        // Cek jika ada surat yang statusnya Approved
+        $sudahApproved = $suratList->where('status', 'Disetujui')->count();
+        if ($sudahApproved > 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Pengajuan sebelumnya sudah dalam status Approved dan tidak dapat diajukan kembali.',
+                'message' => 'Pengajuan sebelumnya sudah dalam status Disetujui dan tidak dapat diajukan kembali.',
             ], 403); // Forbidden
         }
 
-        // Jika belum Placed, dianggap aman
+        // Cek jika ada surat yang tanggal_mulai dan tanggal_selesai sudah lebih dari sebulan
+        $lebihdarisebulan = $suratList->filter(function ($surat) {
+            if ($surat->tanggal_mulai) {
+                $mulai = \Carbon\Carbon::parse($surat->tanggal_mulai)->startOfDay();
+                $sekarang = \Carbon\Carbon::now()->startOfDay();
+                // Hitung selisih hari, termasuk hari mulai
+                $diff = $mulai->diffInDays($sekarang) + 1;
+                return $diff > 30;
+            }
+            return false;
+        })->count();
+
+        // dd($lebihdarisebulan);
+
+        if ($lebihdarisebulan > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pengajuan tidak dapat dilakukan karena pelaksanaan sebelumnya sudah lebih dari sebulan.',
+            ], 403); // Forbidden
+        }
+
+        // Jika belum ada yang Approved, pengajuan masih bisa dilakukan
         return response()->json([
             'success' => true,
             'message' => 'Pengajuan masih bisa dilakukan.',
@@ -241,6 +264,8 @@ public function search(Request $request)
     public function delete($id)
     {
         Pengajuan::findOrFail($id)->delete();
+        // Hapus semua PengajuanDetail yang terkait dengan pengajuan ini
+        PengajuanDetail::where('id_surat', $id)->delete();
 
         return response()->json(['status' => true, 'message' => 'Pengajuan surat berhasil dihapus.']);
     }
@@ -257,18 +282,24 @@ public function search(Request $request)
         return DataTables::of($pengajuanSurat)
             ->addIndexColumn()
             ->editColumn('status', function ($row) {
-                if ($row->status === 'Approved') {
-                    return '<span class="badge bg-success">Disetujui</span>';
-                } else if ($row->status === 'Rejected') {
+                if ($row->status === 'Disetujui') {
+                    return '<span class="badge bg-primary">Disetujui</span>';
+                } else if ($row->status === 'Diterima') {
+                    return '<span class="badge bg-secondary">Diterima</span>';
+                } else if ($row->status === 'Ditolak') {
                     return '<span class="badge bg-danger">Ditolak</span>';
-                } else if ($row->status === 'Placed') {
-                    return '<span class="badge bg-primary">Ditempatkan</span>';
+                } else if ($row->status === 'Ditempatkan') {
+                    return '<span class="badge bg-success">Ditempatkan</span>';
                 } else {
                     return '<span class="badge bg-warning">Menunggu</span>';
                 }
             })
             ->addColumn('namasiswa', function ($row) {
                 return optional(Siswa::where('nis', $row->nim)->first())->nama;
+            })
+            ->editColumn('perusahaan_tujuan', function($row) {
+                $dt = Dudi::where("nama", $row->perusahaan_tujuan)->first();
+                return '<a href="' . url("/d/dudi?id=" . $dt->id_dudi) . '">' . $dt->nama . '</a>';
             })
             ->addColumn('aksi', function ($row) {
                 $actionButtons = '
@@ -280,9 +311,13 @@ public function search(Request $request)
                         </button>
                         <ul class="dropdown-menu">';
 
-                // Hanya tampilkan tombol "Disetujui" jika status bukan "Placed"
-                if ($row->status !== 'Placed') {
+                // Hanya tampilkan tombol "Disetujui" jika status bukan "Ditempatkan"
+                if ($row->status !== 'Diterima' && $row->status !== 'Ditempatkan') {
                     $actionButtons .= '<li><button class="dropdown-item approve-btn" data-id="' . $row->id . '">Disetujui</button></li>';
+                }
+
+                if ($row->status === 'Diterima') {
+                    $actionButtons .= '<li><button class="dropdown-item ditempatkan-btn" data-id="' . $row->id . '">Tempatkan</button></li>';
                 }
 
                 $actionButtons .= '
@@ -295,7 +330,7 @@ public function search(Request $request)
                 ';
                 return $actionButtons;
             })
-            ->rawColumns(['status', 'aksi'])
+            ->rawColumns(['status', 'aksi', 'perusahaan_tujuan'])
             ->make(true);
     }
 }
@@ -306,19 +341,26 @@ public function reject(Request $request, $id)
     ]);
 
     $pengajuan = Pengajuan::findOrFail($id);
-    $pengajuan->status = 'Rejected';
+    $pengajuan->status = 'Ditolak';
     $pengajuan->keterangan = $request->keterangan; // Simpan keterangan
     $pengajuan->save();
 
     return response()->json(['message' => 'Pengajuan berhasil ditolak dengan keterangan.']);
 }
 
-public function approve($id)
+public function approve(Request $request)
 {
-    $pengajuan = Pengajuan::findOrFail($id);
+
+    $request->validate([
+        'noPengajuanSurat' => 'required',
+        'nomorSurat' => 'required'
+    ]);
+
+    $pengajuan = Pengajuan::findOrFail($request->noPengajuanSurat);
 
     // Ubah status menjadi "Disetujui"
-    $pengajuan->status = 'Approved';
+    $pengajuan->status = 'Disetujui';
+    $pengajuan->no_surat = $request->nomorSurat;
     $pengajuan->save();
 
     // Ambil data untuk surat
@@ -331,6 +373,7 @@ public function approve($id)
     ];
 
     return response()->json([
+        'status' => 'success',
         'message' => 'Pengajuan berhasil disetujui.',
         'surat' => $surat,
     ]);

@@ -58,7 +58,7 @@ class FileController extends Controller
 
             // Simpan metadata file ke database
             $pengajuan = Pengajuan::findOrFail($request->id_pengajuan);
-            $pengajuan->update(['file_balasan_path' => $filePath, 'status' => 'Placed']);
+            $pengajuan->update(['file_balasan_path' => $filePath, 'status' => 'Diterima']);
 
             return redirect()->route('d.siswa');
         }

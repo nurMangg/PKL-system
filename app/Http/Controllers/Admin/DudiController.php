@@ -40,7 +40,6 @@ class DudiController extends Controller
             'no_kontak' => 'required|string|max:14',
             'longitude' => 'required|string|max:50',
             'latitude' => 'required|string|max:50',
-            'radius' => 'required|string|max:5',
         ]);
 
         if ($validator->fails()) {
@@ -59,7 +58,7 @@ class DudiController extends Controller
                 'alamat' => $request->alamat,
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
-                'radius' => $request->radius,
+                'radius' => 10,
                 'create_by' => Auth::id(),
             ]);
 
@@ -86,7 +85,6 @@ class DudiController extends Controller
             'no_kontak' => 'required|string|max:14',
             'longitude' => 'required|string|max:50',
             'latitude' => 'required|string|max:50',
-            'radius' => 'required|string|max:5',
         ]);
 
         if ($validator->fails()) {
@@ -104,7 +102,7 @@ class DudiController extends Controller
                 'alamat' => $request->alamat,
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
-                'radius' => $request->radius,
+                'radius' => 10,
                 'create_by' => Auth::id(),
             ]);
 
@@ -141,7 +139,6 @@ class DudiController extends Controller
             'no_kontak' => 'required|string|max:14',
             'longitude' => 'required|string|max:50',
             'latitude' => 'required|string|max:50',
-            'radius' => 'required|string|max:5',
         ]);
 
 
@@ -164,7 +161,7 @@ class DudiController extends Controller
                 'alamat' => $request->alamat,
                 'longitude' => $request->longitude,
                 'latitude' => $request->latitude,
-                'radius' => $request->radius,
+                'radius' => 10,
                 'updated_by' => Auth::id(),
             ]);
 

@@ -196,17 +196,9 @@
                                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nilai-pkl">Nilai
                                     PKL</button>
                             </li>
-                            {{-- <li class="nav-item">
-                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#upload-file">
-                                    Upload file</button>
-                            </li> --}}
                             <li class="nav-item">
                                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#pengajuan-surat">Pengajuan
                                     Surat</button>
-                            </li>
-                            <li class="nav-item">
-                                <button class="nav-link" data-bs-toggle="tab"
-                                    data-bs-target="#profile-quesioner">Quisioner</button>
                             </li>
                             <li class="nav-item">
                                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-change-password">
@@ -285,102 +277,6 @@
                             </div>
                         </div>
 
-
-                        <!-- upload-file -->
-                        <div class="tab-pane fade pt-3" id="upload-file">
-                            <h1 class="text-center mb-4">Upload dan Kelola File</h1>
-
-                            <!-- Form Upload -->
-                            <div class="card mb-4">
-                                <div class="card-body">
-                                    <form action="{{ route('d.upload') }}" method="POST" enctype="multipart/form-data">
-                                        @csrf
-                                        <div class="mb-3">
-                                            <label for="file" class="form-label">Pilih File:</label>
-                                            <input type="file" class="form-control" name="file" id="file"
-                                                accept=".pdf,.doc,.docx,.png,." required>
-                                        </div>
-                                        <button type="submit" class="btn btn-primary">Upload</button>
-                                    </form>
-                                </div>
-                            </div>
-
-                            <!-- Daftar File -->
-                            <h2 class="mb-3">Daftar File</h2>
-                            @if ($files->isNotEmpty())
-                                <table class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>No</th>
-                                            <th>Nama File</th>
-                                            <th>Tanggal Upload</th>
-                                            <th>Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($files as $index => $file)
-                                            <tr>
-                                                <td>{{ $index + 1 }}</td>
-                                                <td>{{ $file->file_name }}</td>
-                                                <td>{{ $file->uploaded_at }}</td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <!-- Edit Button -->
-                                                        <!-- <button class="btn btn-warning me-2" data-bs-toggle="modal" data-bs-target="#editModal"
-                                                                    data-id="{{ $file->id }}" data-name="{{ $file->file_name }}">Edit</button> -->
-                                                        <!-- Delete Button -->
-                                                        <a href="{{ route('d.delete', $file->id) }}"
-                                                            class="btn btn-danger">Hapus</a>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            @else
-                                <p class="text-muted">Tidak ada file yang diunggah.</p>
-                            @endif
-
-                            <!-- Modal Edit -->
-                            @isset($file)
-                                <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel"
-                                    aria-hidden="true">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="editModalLabel">Edit Nama File</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                    aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <form action="{{ route('d.update', $file->id) }}" method="POST"
-                                                    enctype="multipart/form-data" id="editForm">
-                                                    @csrf
-                                                    @method('PUT')
-                                                    <div class="mb-3">
-                                                        <label for="new_name" class="form-label">Nama Baru:</label>
-                                                        <input type="text" class="form-control" id="new_name"
-                                                            name="new_name" required />
-                                                    </div>
-
-                                                    <div class="mb-3">
-                                                        <label for="file" class="form-label">Unggah File Baru
-                                                            (Opsional):</label>
-                                                        <input type="file" class="form-control" id="file"
-                                                            name="file" accept=".pdf,.doc,.docx,.png">
-                                                    </div>
-
-                                                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endisset
-
-                        </div>
-
-
                         <!-- pengajuan surat Tab-->
                         <div class="tab-pane fade pt-3" id="pengajuan-surat">
                             <div class="d-flex justify-content-between mb-3">
@@ -404,6 +300,7 @@
                                             <th>Perusahaan Tujuan</th>
                                             <th>Tanggal Pengajuan</th>
                                             <th>Status</th>
+                                            <th>Detail</th>
                                             <th>File Surat</th>
                                             <th>Balasan DuDi</th>
                                         </tr>
@@ -412,34 +309,6 @@
                             </div>
                         </div>
 
-                        <div class="tab-pane fade profile-quesioner" id="profile-quesioner">
-                            <form id="questionForm" class="row g-3 needs-validation" novalidate>
-                                @csrf
-                                <input type="hidden" id="stt" name="stt" value="0">
-                                <input type="hidden" id="nis" name="nis" value="{{ $siswa->nis }}">
-                                <div class="mb-3">
-                                    <table class="table table-bordered">
-                                        <thead>
-                                            <tr>
-                                                <th>Quesioner</th>
-                                                <th>Tanggapan</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="quesioner-table">
-                                        </tbody>
-                                    </table>
-                                    <div id="spinner" style="display: none; text-align: center; margin-top: 20px;">
-                                        <div class="spinner-border text-primary" role="status">
-                                            <span class="visually-hidden">Loading...</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="invalid-feedback"> Harap jawab semua pertanyaan. </div>
-                                </div>
-
-                                <button type="submit" class="btn btn-primary">Simpan</button>
-                            </form>
-                        </div>
 
                         <!-- Modal Form Pengajuan Surat -->
                         <div class="modal fade" id="pengajuanModal" tabindex="-1" aria-labelledby="pengajuanModalLabel"
@@ -505,7 +374,21 @@
                                                 </div>
                                             </div>
 
-
+                                            <div class="mb-3">
+                                                <label for="tanggalMulai" class="form-label">Tahun Akademik</label>
+                                                <select class="form-select" id="id_ta" name="id_ta">
+                                                    <option value="">Pilih</option>
+                                                    @foreach ($ta as $item)
+                                                        @if ($item->id_ta == $activeAcademicYear->id_ta)
+                                                            <option value="{{ $item->id_ta }}" selected>{{ $item->tahun_akademik }}
+                                                                (aktif)
+                                                            </option>
+                                                        @else
+                                                            <option value="{{ $item->id_ta }}">{{ $item->tahun_akademik }}</option>
+                                                        @endif
+                                                    @endforeach
+                                                </select>
+                                            </div>
                                             <div class="mb-3">
                                                 <label for="tanggalMulai" class="form-label">Tanggal Mulai</label>
                                                 <input type="date" class="form-control" id="tanggalMulai"
@@ -523,6 +406,62 @@
                                 </div>
                             </div>
                         </div>
+
+                        @if (session('nis') == $siswa->nis || in_array(auth()->user()->role, [1, 2]))
+                        {{-- Data Nilai PKL --}}
+                        <div class="tab-pane fade pt-3 nilai-pkl" id="nilai-pkl">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-sm" id="table-nilai" width="100%">
+                                    <thead>
+                                        <tr>
+                                            <th>Laporan</th>
+                                            <th>#</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+
+
+
+                        <!-- Change Password Tab -->
+                        <div class="tab-pane fade pt-3" id="profile-change-password">
+                            <!-- Change Password Form -->
+                            <form id="changePasswordForm">
+                                @csrf
+                                <div class="row mb-3">
+                                    <label for="currentPassword" class="col-md-4 col-lg-3 col-form-label">Current
+                                        Password</label>
+                                    <div class="col-md-8 col-lg-9">
+                                        <input name="password" type="password" class="form-control" id="currentPassword"
+                                            required>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <label for="newPassword" class="col-md-4 col-lg-3 col-form-label">New
+                                        Password</label>
+                                    <div class="col-md-8 col-lg-9">
+                                        <input name="newpassword" type="password" class="form-control" id="newPassword"
+                                            minlength="8" required>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <label for="renewPassword" class="col-md-4 col-lg-3 col-form-label">Re-enter New
+                                        Password</label>
+                                    <div class="col-md-8 col-lg-9">
+                                        <input name="renewpassword" type="password" class="form-control"
+                                            id="renewPassword" minlength="8" required>
+                                    </div>
+                                </div>
+
+                                <div class="text-center">
+                                    <button type="submit" class="btn btn-primary">Ganti Password</button>
+                                </div>
+                            </form><!-- End Change Password Form -->
+                        </div>
+                    @endif
 
                         <!-- Modal Tambah Perusahaan -->
                         <div class="modal fade" id="modalTambahPerusahaan" tabindex="-1"
@@ -608,60 +547,7 @@
                         </div>
                     </div>
 
-                    @if (session('nis') == $siswa->nis || in_array(auth()->user()->role, [1, 2]))
-                        {{-- Data Nilai PKL --}}
-                        <div class="tab-pane fade pt-3 nilai-pkl" id="nilai-pkl">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-sm" id="table-nilai" width="100%">
-                                    <thead>
-                                        <tr>
-                                            <th>Laporan</th>
-                                            <th>#</th>
-                                        </tr>
-                                    </thead>
-                                </table>
-                            </div>
-                        </div>
 
-
-                        <!-- Change Password Tab -->
-                        <div class="tab-pane fade pt-3" id="profile-change-password">
-                            <!-- Change Password Form -->
-                            <form id="changePasswordForm">
-                                @csrf
-                                <div class="row mb-3">
-                                    <label for="currentPassword" class="col-md-4 col-lg-3 col-form-label">Current
-                                        Password</label>
-                                    <div class="col-md-8 col-lg-9">
-                                        <input name="password" type="password" class="form-control" id="currentPassword"
-                                            required>
-                                    </div>
-                                </div>
-
-                                <div class="row mb-3">
-                                    <label for="newPassword" class="col-md-4 col-lg-3 col-form-label">New
-                                        Password</label>
-                                    <div class="col-md-8 col-lg-9">
-                                        <input name="newpassword" type="password" class="form-control" id="newPassword"
-                                            minlength="8" required>
-                                    </div>
-                                </div>
-
-                                <div class="row mb-3">
-                                    <label for="renewPassword" class="col-md-4 col-lg-3 col-form-label">Re-enter New
-                                        Password</label>
-                                    <div class="col-md-8 col-lg-9">
-                                        <input name="renewpassword" type="password" class="form-control"
-                                            id="renewPassword" minlength="8" required>
-                                    </div>
-                                </div>
-
-                                <div class="text-center">
-                                    <button type="submit" class="btn btn-primary">Ganti Password</button>
-                                </div>
-                            </form><!-- End Change Password Form -->
-                        </div>
-                    @endif
                 </div><!-- End Bordered Tabs -->
             </div>
         </div>
@@ -722,6 +608,108 @@
         </div>
     </div>
 
+    <!-- Modal Tambah Instruktur -->
+    <div class="modal fade" id="modalTambahInstruktur" tabindex="-1" aria-labelledby="modalTambahInstrukturLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTambahInstrukturLabel">Tambah Instruktur</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formTambahInstruktur" action="" method="POST">
+
+                        <div class="mb-3">
+                            <label for="id_instruktur" class="form-label">ID Instruktur</label>
+                            <input type="text" class="form-control @error('id_instruktur') is-invalid @enderror" id="id_instruktur" name="id_instruktur" value="{{ old('id_instruktur') }}" required maxlength="15">
+                            <div class="invalid-feedback">
+                                ID Instruktur wajib diisi dan maksimal 15 karakter.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nama" class="form-label">Nama</label>
+                            <input type="text" class="form-control @error('nama') is-invalid @enderror" id="nama" name="nama" value="{{ old('nama') }}" required maxlength="50">
+                            <div class="invalid-feedback">
+                                Nama wajib diisi dan maksimal 50 karakter.
+                            </div>
+                        </div>
+                        <!-- Gender Radio Buttons -->
+                        <div class="mb-3">
+                            <label for="gender">Gender</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="gender"
+                                        id="gender_L" value="L"
+                                        {{ old('gender') == 'L' ? 'checked' : '' }} required>
+                                    <label class="form-check-label"
+                                        for="gender_L">Laki-laki</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="gender"
+                                        id="gender_P" value="P"
+                                        {{ old('gender') == 'P' ? 'checked' : '' }} required>
+                                    <label class="form-check-label"
+                                        for="gender_P">Perempuan</label>
+                                </div>
+                            </div>
+                            <div class="invalid-feedback">
+                                Gender wajib dipilih.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="no_kontak" class="form-label">Nomor Kontak</label>
+                            <input type="number" class="form-control @error('no_kontak') is-invalid @enderror" id="no_kontak" name="no_kontak" value="{{ old('no_kontak') }}" required maxlength="14">
+                            <div class="invalid-feedback">
+                                Nomor kontak wajib diisi dan maksimal 14 karakter.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" required maxlength="35">
+                            <div class="invalid-feedback">
+                                Email wajib diisi dan maksimal 35 karakter.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="alamat" class="form-label">Alamat</label>
+                            <textarea class="form-control @error('alamat') is-invalid @enderror" id="alamat" name="alamat" maxlength="100">{{ old('alamat') }}</textarea>
+                            <div class="invalid-feedback">
+                                Alamat maksimal 100 karakter.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="alamat" class="form-label">DuDi</label>
+                            <select class="form-select" id="idPerusahaan" name="idPerusahaan" readonly>
+                                <option value="">{{ old('perusahaan_tujuan') }}</option>
+                            </select>
+                        </div>
+
+
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal Surat --}}
+    <div class="modal fade" id="suratModal" tabindex="-1" aria-labelledby="suratModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="suratModalLabel">Surat Persetujuan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="suratModalBody">
+                    <!-- Surat akan dimuat di sini -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Balasan Dudi -->
     <div class="modal fade" id="modalBalasanDudi" tabindex="-1" aria-labelledby="modalBalasanDudiLabel"
         aria-hidden="true">
@@ -741,12 +729,19 @@
                                 accept=".pdf,.doc,.docx,.png,." required>
                         </div>
                         <div class="mb-3">
-                            <label for="instruktur_id" class="form-label">Pilih Instruktur</label>
-                            <select class="form-control" id="instruktur_id" name="instruktur_id" style="width: 100%;">
+                            <label for="instruktur_isd" class="form-label">Pilih Instruktur</label>
+                            <select class="form-select" id="instruktur_id" name="instruktur_id" style="width: 100%;">
                                 <option value="">-- Pilih Instruktur --</option>
                             </select>
                             <div class="invalid-feedback"> Instruktur wajib dipilih. </div>
                         </div>
+                        <div class="d-flex justify-content-center mb-3">
+                            <p class="me-3">Tidak ada instruktur, silahkan</p>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahInstruktur">
+                                Tambah Instruktur
+                            </button>
+                        </div>
+
 
                         <button type="submit" class="btn btn-primary">Upload</button>
                     </form>
@@ -830,33 +825,45 @@
 
 <script>
     $(document).ready(function() {
-        $('#instruktur_id').select2({
-            theme: 'bootstrap-5',
-            placeholder: 'Pilih Instruktur',
-            allowClear: true,
-            ajax: {
-                url: "{{ route('siswa.instruktur.search') }}",
-                dataType: 'json',
-                delay: 250,
-                data: function(params) {
-                    return {
-                        q: params.term
-                    };
-                },
-                processResults: function(data) {
-                    return {
-                        results: $.map(data.results, function(item) {
-                            return {
-                                id: item.id_instruktur,
-                                text: item.nama
-                            }
-                        })
-                    };
-                },
-                cache: true
-            }
-        });
+
+        $.ajaxSetup({
+    headers: {
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+    }
+});
+
+
+    $('#instruktur_id').select2({
+        theme: 'bootstrap-5',
+        dropdownParent: $('#modalBalasanDudi'),
+        placeholder: 'Pilih Instruktur',
+        ajax: {
+            url: "{{ route('siswa.instruktur.search') }}",
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term,
+                    pengajuan_id: $('#id_pengajuan').val(),
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: $.map(data.results, function (item) {
+                        return {
+                            id: item.id,
+                            text: item.text
+                        };
+                    })
+                };
+            },
+            cache: true
+        }
     });
+});
+
+
+
 </script>
 
     <!-- validasi tanggal PKL -->
@@ -1304,6 +1311,12 @@
                         searchable: false
                     },
                     {
+                        data: 'detailsiswa',
+                        name: 'detailsiswa',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
                         data: 'aksi',
                         name: 'aksi',
                         orderable: false,
@@ -1510,7 +1523,7 @@
                     success: function(response) {
                         $('#pengajuanModal').modal('hide');
                         $('#formPengajuan')[0].reset();
-                        $('#pengajuan-surat').DataTable().ajax.reload();
+                        $('#table-pengajuan-surat').DataTable().ajax.reload();
                         Toast.fire({
                             icon: "success",
                             title: response.message
@@ -1607,153 +1620,11 @@
                     });
                 });
 
-                $('#questionForm').on('submit', function(e) {
-                    e.preventDefault();
-                    var form = $(this)[0];
-                    if (form.checkValidity() === false) {
-                        e.stopPropagation();
-                    } else {
-                        var url = "{{ route('d.siswa.quesioner.upsert') }}";
-                        var formData = $(this).serialize();
 
-                        $.ajax({
-                            url: url,
-                            method: "POST",
-                            data: formData,
-                            success: function(response) {
-                                getNilaiQuestion();
-                                if (response.status) {
-                                    Toast.fire({
-                                        icon: "success",
-                                        title: response.message
-                                    });
-                                } else {
-                                    Toast.fire({
-                                        icon: "error",
-                                        title: response.message
-                                    });
-                                }
-                            },
-                            error: function(response) {
-                                Toast.fire({
-                                    icon: "error",
-                                    title: 'Woops! Fatal Error.'
-                                });
-                            }
-                        });
-                    }
-                });
             });
         </script>
 
-        <script>
-            function getQuestion() {
-                $('#spinner').show();
-
-                $.ajax({
-                    url: "{{ route('d.siswa.quesioner') }}",
-                    type: "GET",
-                    data: {
-                        id_ta: $('#id_ta').val(),
-                    },
-                    success: function(response) {
-                        $('#spinner').hide();
-
-                        if (response.status === 'success') {
-                            const questions = response.data;
-                            const tableBody = $('#quesioner-table');
-                            tableBody.empty();
-
-                            // Kelompokkan soal berdasarkan master
-                            const grouped = {};
-
-                            questions.forEach(q => {
-                                if (!grouped[q.id_master]) {
-                                    grouped[q.id_master] = {
-                                        master: q.master,
-                                        items: []
-                                    };
-                                }
-                                grouped[q.id_master].items.push(q);
-                            });
-
-                            // Render ke tabel
-                            Object.values(grouped).forEach((group, idx) => {
-                                const masterHeader = `
-                        <tr>
-                            <td colspan="2"><strong>${group.master}</strong></td>
-                        </tr>
-                    `;
-                                tableBody.append(masterHeader);
-
-                                group.items.forEach((question, i) => {
-                                    const row = `
-                            <tr>
-                                <td>
-                                    ${i + 1}. ${question.soal}
-                                    <input type="hidden" name="id_nilai[${question.id_quesioner}]" value="">
-                                </td>
-                                <td>
-                                    <textarea name="quesioner[${question.id_quesioner}]" required></textarea>
-                                </td>
-                            </tr>
-                        `;
-                                    tableBody.append(row);
-                                });
-                            });
-
-                            getNilaiQuestion();
-                        } else {
-                            Toast.fire({
-                                icon: "error",
-                                title: response.message
-                            });
-                        }
-                    },
-                    error: function() {
-                        $('#spinner').hide();
-                        alert('Gagal memuat data pertanyaan.');
-                    }
-                });
-            }
-
-
-
-            function getNilaiQuestion() {
-                var nis = '{{ $siswa->nis }}';
-                var id_ta = $('#id_ta').val();
-
-                $.ajax({
-                    url: "{{ url('d/siswa/quesioner/edit') }}/" + nis + "/" + id_ta,
-                    method: 'GET',
-                    success: function(response) {
-                        if (response.status === 'success') {
-                            var data = response.data;
-
-                            $('#stt').val('1');
-                            $('#id_nilai').val(data.id_nilai);
-
-                            // Kosongkan semua textarea dan input hidden nilai
-                            $('textarea[name^="quesioner"]').val('');
-                            $('input[name^="id_nilai"]').val('');
-
-                            // Isi kembali dengan data dari server
-                            data.quesioner.forEach(function(question) {
-                                $(`textarea[name="quesioner[${question.id_quesioner}]"]`).val(question
-                                    .nilai);
-                                $(`input[name="id_nilai[${question.id_quesioner}]"]`).val(question
-                                    .id_nilai);
-                            });
-                        } else {
-                            $('#stt').val('0');
-                        }
-                    },
-                    error: function() {
-                        console.error('Terjadi kesalahan saat mengambil data quesioner.');
-                    }
-                });
-            }
-        </script>
+        
         <script>
             const editModal = document.getElementById('editModal');
             if (editModal) editModal.addEventListener('show.bs.modal', function(event) {
@@ -2032,6 +1903,13 @@
             $(document).on('click', '.btn-diterima', function() {
                 var id_pengajuan = $(this).data('id');
                 $('#id_pengajuan').val(id_pengajuan);
+
+                var idPerusahaan = $(this).data('iddudi');
+                var namaPerusahaan = $(this).data('namadudi');
+
+                // Isi elemen <select> dengan data yang diambil
+                $('#idPerusahaan').html('<option value="' + idPerusahaan + '">' + namaPerusahaan + '</option>');
+
                 $('#modalBalasanDudi').modal('show');
             });
 
@@ -2061,7 +1939,7 @@
                                         text: 'Surat berhasil ditolak.'
                                     }).then(() => {
                                         // reload datatable jika ada
-                                        $('#pengajuan-surat').DataTable().ajax.reload();
+                                        $('#table-pengajuan-surat').DataTable().ajax.reload();
                                         if (typeof $('#pengajuanTable')
                                             .DataTable === 'function') {
                                             $('#pengajuanTable').DataTable()
@@ -2093,6 +1971,117 @@
                 });
             });
         });
+    </script>
+
+
+{{-- tambah Instruktur --}}
+    <script>
+        $(document).ready(function() {
+            $(document).on('click', '.detail-btn', function() {
+                var id = $(this).data('id');
+                $.ajax({
+                    url: "/pengajuan/surat/details/" + id,
+                    method: "GET",
+                    success: function(response) {
+                        var tableRows = response.siswa.map(function(siswa, index) {
+                            return `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${siswa.nim}</td>
+                            <td>${siswa.nama}</td>
+                            <td>${siswa.kelas}</td>
+                            <td>${siswa.jurusan}</td>
+                        </tr>
+                    `;
+                        }).join('');
+
+                        $('#suratModalBody').html(`
+                    <h5>Daftar Siswa</h5>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>NIM</th>
+                                <th>Nama</th>
+                                <th>Kelas</th>
+                                <th>Jurusan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows}
+                        </tbody>
+                    </table>
+                `);
+                        $('#suratModal').modal('show');
+                    },
+                    error: function() {
+                        alert('Terjadi kesalahan saat memuat data.');
+                    }
+                });
+            });
+        $('#formTambahInstruktur').on('submit', function(e) {
+            e.preventDefault();
+            $(this).removeClass('was-validated');
+
+            if (this.checkValidity() === false) {
+                $(this).addClass('was-validated');
+                return;
+            }
+
+            var formData = new FormData(this);
+            var url = "{{ route('siswa.instruktur.upsert') }}";
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(res) {
+                    if (res.status === 'success') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: res.message || 'Instruktur berhasil disimpan.'
+                        }).then(() => {
+                            $('#instrukturTable').DataTable().ajax.reload();
+                            if ($.fn.DataTable.isDataTable('#pengajuanTable')) {
+                                $('#pengajuanTable').DataTable().ajax.reload();
+                            } else {
+                                location.reload();
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: res.message || 'Gagal menyimpan instruktur.'
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    if (xhr.status === 422 && xhr.responseJSON.errors) {
+                        let errors = xhr.responseJSON.errors;
+                        let messages = Object.values(errors)
+                            .map(msgArr => msgArr.join(', '))
+                            .join('\n');
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Validasi Gagal',
+                            text: messages
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: xhr.responseJSON?.message || 'Terjadi kesalahan saat menambahkan instruktur.'
+                        });
+                    }
+                }
+            });
+        });
+    });
     </script>
 @endsection
 

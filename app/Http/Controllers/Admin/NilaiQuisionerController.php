@@ -51,7 +51,7 @@ class NilaiQuisionerController extends Controller
         // Validasi data
         $request->validate([
             'tanggal' => 'required|date',
-            'nis' => 'required|exists:siswa,nis',
+            'id_instruktur' => 'required|exists:instruktur,id_instruktur',
             'quesioner' => 'required|array',
             'quesioner.*' => 'required|string|max:1000',
         ]);
@@ -60,7 +60,7 @@ class NilaiQuisionerController extends Controller
         foreach ($request->quesioner as $idQuesioner => $nilai) {
             $data = [
                 'tanggal' => $request->tanggal,
-                'nis' => $request->nis,
+                'id_instruktur' => $request->id_instruktur,
                 'id_quesioner' => $idQuesioner,
                 'nilai' => $nilai,
                 'created_by' => Auth::id(),
@@ -84,8 +84,8 @@ class NilaiQuisionerController extends Controller
     public function edit(Request $request)
     {
         // Mencari data NilaiQuesioner berdasarkan nis dan id_ta
-        $nilaiRecords = NilaiQuesioner::with(['siswa', 'quesioner'])
-            ->where('nis', $request->nis)
+        $nilaiRecords = NilaiQuesioner::with(['instruktur', 'quesioner'])
+            ->where('id_instruktur', $request->id_instruktur)
             ->whereHas('quesioner', function ($query) use ($request) {
                 $query->where('id_ta', $request->id_ta);
             })
@@ -116,8 +116,8 @@ class NilaiQuisionerController extends Controller
             'status' => 'success',
             'data' => [
                 'tanggal' => $firstRecord->tanggal,
-                'nis' => $firstRecord->nis,
-                'nama_siswa' => $firstRecord->siswa->nama,
+                'id_instruktur' => $firstRecord->id_instruktur,
+                'nama_instruktur' => $firstRecord->instruktur->nama,
                 'quesioner' => $quesionerData,
             ]
         ]);

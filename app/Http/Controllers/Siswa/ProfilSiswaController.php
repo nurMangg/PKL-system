@@ -38,7 +38,7 @@ class ProfilSiswaController extends Controller
         $activeAcademicYear = getActiveAcademicYear();
         $ta = ThnAkademik::where('is_active', true)->orderBy('id_ta', 'desc')->get();
         // dd($activeAcademicYear);
-        $files = FileModel::all(); 
+        $files = FileModel::all();
 
         return view('siswa.profile', compact('siswa', 'activeAcademicYear', 'ta','files'));
     }
@@ -131,34 +131,6 @@ class ProfilSiswaController extends Controller
     }
 
 
-public function get_quesioner(Request $request)
-{
-    $questions = Quesioner::with('master')
-        ->where('is_active', true)
-        ->where('id_ta', $request->id_ta)
-        ->orderBy('master_id')
-        ->get()
-        ->map(function ($q) {
-            return [
-                'id_quesioner' => $q->id_quesioner,
-                'soal' => $q->soal,
-                'id_master' => $q->master_id,
-                'master' => $q->master->nama ?? 'Tanpa Master',
-            ];
-        });
-
-    if ($questions->isNotEmpty()) {
-        return response()->json([
-            'status' => 'success',
-            'data' => $questions,
-        ]);
-    } else {
-        return response()->json([
-            'status' => 'failed',
-            'message' => 'Quesioner tidak ditemukan',
-        ]);
-    }
-}
 
 
     public function data_kegiatan(Request $request)
@@ -320,27 +292,7 @@ public function get_quesioner(Request $request)
     }
 
 
-    function upsert_quesioner(Request $request)
-    {
-        $nis = $request->has('nis') ? $request->nis : session('nis');
-
-        // Menambahkan parameter tambahan ke Request yang sudah ada
-        $request->merge([
-            'tanggal' => date('Y-m-d'),
-            'nis' => $nis,
-        ]);
-        $nilaiQuisionerController = new NilaiQuisionerController();
-
-        // Panggil metode upsert
-        return $nilaiQuisionerController->upsert($request);
-    }
-
-    function edit_quesioner(Request $request)
-    {
-        $nilaiQuisionerController = new NilaiQuisionerController();
-        // Panggil metode upsert
-        return $nilaiQuisionerController->edit($request);
-    }
+    
 
     // excel
     public function presensiExcel(Request $request)

@@ -13,12 +13,17 @@ class NilaiQuesioner extends Model
     public $incrementing = true;
 
     protected $fillable = [
-        'nilai', 'tanggal', 'nis', 'id_quesioner', 'is_active', 'created_at', 'created_by', 'updated_at', 'updated_by'
+        'nilai', 'tanggal', 'id_instruktur', 'id_quesioner', 'is_active', 'created_at', 'created_by', 'updated_at', 'updated_by'
     ];
 
     public function siswa()
     {
         return $this->belongsTo(Siswa::class, 'nis', 'nis')->where('siswa.is_active', true);
+    }
+
+    public function instruktur()
+    {
+        return $this->belongsTo(Instruktur::class, 'id_instruktur', 'id_instruktur')->where('instruktur.is_active', true);
     }
 
     public function quesioner()

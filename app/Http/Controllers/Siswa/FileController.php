@@ -42,7 +42,8 @@ class FileController extends Controller
         // Validasi file
         $request->validate([
             'file' => 'required|file|mimes:pdf,doc,docx,png|max:2048',
-            'id_pengajuan' => 'required'
+            'id_pengajuan' => 'required',
+            'instruktur_id' => 'required',
         ]);
 
         // Cek apakah file ada
@@ -58,7 +59,7 @@ class FileController extends Controller
 
             // Simpan metadata file ke database
             $pengajuan = Pengajuan::findOrFail($request->id_pengajuan);
-            $pengajuan->update(['file_balasan_path' => $filePath, 'status' => 'Diterima']);
+            $pengajuan->update(['file_balasan_path' => $filePath, 'status' => 'Diterima', 'id_instrukturId' => $request->instruktur_id]);
 
             return redirect()->route('d.siswa');
         }

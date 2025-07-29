@@ -109,9 +109,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/instruktur/search', [SearchController::class, 'searchInstruktur'])->name('siswa.instruktur.search');
 
         Route::post('/siswa/diTempatkan', [PengajuanSuratController::class, 'diTempatkan'])->name('siswa.pengajuan.isTempatkan');
-
-
-
+        Route::post('/siswa/instruktur/upsert', [InstrukturController::class, 'upsertInstruktur'])->name('siswa.instruktur.upsert');
     });
 
      // Penilaian
@@ -121,6 +119,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('template-penilaian/data', [TemplatePenilaianController::class, 'getData'])->name('template-penilaian.data');
         Route::post('template-penilaian/{id}/apply', [TemplatePenilaianController::class, 'applyTemplate'])->name('template-penilaian.apply');
         Route::get('template-penilaian/{id}/guru', [TemplatePenilaianController::class, 'getGuruByTemplate'])->name('template-penilaian.getGuru');
+        Route::get('pengajuan-surat/guru/{id}', [SearchController::class, 'getDataByGuru'])->name('pengajuan.surat.guru');
     });
 
     Route::group(['middleware' => [RoleMiddleware::class . ':1,2,4,5']], function () {
@@ -197,6 +196,8 @@ Route::group(['middleware' => ['auth']], function () {
 
         Route::get('/search', 'search')->name('instruktur.search');
 
+
+
         Route::post('/uploadExcel', 'uploadExcel')->name('instruktur.uploadExcel');
         Route::get('/downloadExcel', 'downloadExcel')->name('instruktur.downloadExcel');
         Route::post('/update-keterangan', [ProfilInstrukturController::class, 'updateKeterangan'])->name('presensi.updateKeterangan');
@@ -266,9 +267,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/change-status-bekerja', 'change_status_kerja')->name('d.siswa.change_status_kerja');
         Route::get('/get_penempatan', 'get_penempatan')->name('d.siswa.get_penempatan');
         Route::get('/get_penempatan_detail', 'get_penempatan_detail')->name('d.siswa.get_penempatan_detail');
-        Route::get('/quesioner', 'get_quesioner')->name('d.siswa.quesioner');
-        Route::post('/quesioner/upsert', 'upsert_quesioner')->name('d.siswa.quesioner.upsert');
-        Route::get('/quesioner/edit/{nis}/{id_ta}', 'edit_quesioner')->name('d.siswa.quesioner.edit');
+
 
         Route::get('/presensiExcel/{nis}/{id_penempatan}/{id_ta}', 'presensiExcel')->name('d.siswa.presensiExcel');
         Route::get('/kegiatanExcel/{nis}/{id_penempatan}/{id_ta}', 'kegiatanExcel')->name('d.siswa.kegiatanExcel');
@@ -305,6 +304,10 @@ Route::group(['middleware' => ['auth']], function () {
 
         Route::get('/siswaExcel/{nis}', 'siswaExcel')->name('d.instruktur.siswaExcel');
         Route::get('/penilaian', 'penilaian')->name('d.instruktur.penilaian');
+
+        Route::get('/quesioner', 'get_quesioner')->name('d.instruktur.quesioner');
+        Route::post('/quesioner/upsert', 'upsert_quesioner')->name('d.instruktur.quesioner.upsert');
+        Route::get('/quesioner/edit/{id_instruktur}/{id_ta}', 'edit_quesioner')->name('d.instruktur.quesioner.edit');
     });
 
     // dudi

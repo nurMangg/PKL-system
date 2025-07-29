@@ -98,6 +98,86 @@ class InstrukturController extends Controller
         }
     }
 
+    public function upsertInstruktur(Request $request)
+    {
+        // Validasi input
+        $validator = Validator::make($request->all(), [
+            'id_instruktur' => [
+                'required',
+                'string',
+                'max:15',
+                'min:15',
+                Rule::unique('instruktur')->where(fn($query) => $query->where('is_active', 1)),
+            ],
+            'nama' => 'required|string|max:50',
+            'gender' => 'required|string|max:1',
+            'no_kontak' => 'required|string|max:14',
+            'email' => 'required|string|max:35|email',
+            'alamat' => 'nullable|string|max:100',
+            'idPerusahaan' => 'required|exists:dudi,id_dudi',
+        ]);
+
+        // Jika validasi gagal
+        if ($validator->fails()) {
+            
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors()
+                ], 422);
+            
+        }
+
+            
+
+        // Jalankan transaksi database
+        DB::beginTransaction();
+
+        try {
+            // Cegah duplikasi user (opsional safeguard)
+            $existingUser = User::where('username', $request->id_instruktur)->first();
+            if ($existingUser) {
+                throw new \Exception("User dengan username ini sudah ada.");
+            }
+
+            // Buat user baru
+            $user = User::create([
+                'username' => $request->id_instruktur,
+                'password' => Hash::make($request->id_instruktur),
+                'role' => 4,
+            ]);
+
+            // Buat instruktur baru
+            Instruktur::create([
+                'id_instruktur' => $request->id_instruktur,
+                'nama' => $request->nama,
+                'gender' => $request->gender,
+                'no_kontak' => $request->no_kontak,
+                'email' => $request->email,
+                'alamat' => $request->alamat,
+                'id_dudi' => $request->idPerusahaan,
+                'id_user' => $user->id,
+                'create_by' => Auth::id(),
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data instruktur berhasil disimpan'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage()
+                ], 500);
+            }
+        }
+    }
+
     public function edit($id_instruktur)
     {
         $instruktur = Instruktur::findOrFail($id_instruktur);

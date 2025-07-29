@@ -115,6 +115,37 @@ class ProfilInstrukturController extends Controller
         ], 200);
     }
 
+    public function get_quesioner(Request $request)
+{
+    $questions = Quesioner::with('master')
+        ->where('is_active', true)
+        ->where('id_ta', $request->id_ta)
+        ->orderBy('master_id')
+        ->get()
+        ->map(function ($q) {
+            return [
+                'id_quesioner' => $q->id_quesioner,
+                'soal' => $q->soal,
+                'id_master' => $q->master_id,
+                'master' => $q->master->nama ?? 'Tanpa Master',
+            ];
+        });
+
+    if ($questions->isNotEmpty()) {
+        return response()->json([
+            'status' => 'success',
+            'data' => $questions,
+        ]);
+    } else {
+        return response()->json([
+            'status' => 'failed',
+            'message' => 'Quesioner tidak ditemukan',
+        ]);
+    }
+}
+
+
+
     public function kegiatan_siswa(Request $request)
     {
         // Tentukan nis siswa

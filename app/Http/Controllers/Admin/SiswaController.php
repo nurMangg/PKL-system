@@ -334,11 +334,11 @@ class SiswaController extends Controller
             });
 
         // Jika $k == 'presensi', cari siswa yang ada di penempatan
-        if ($key === 'presensi') {
-            $siswaQuery = $siswaQuery->whereHas('penempatan', function ($query) {
-                $query->where('is_active', true); // Contoh: hanya ambil penempatan dengan status "active"
-            });
-        }
+        // if ($key === 'presensi') {
+        //     $siswaQuery = $siswaQuery->whereHas('penempatan', function ($query) {
+        //         $query->where('is_active', true); // Contoh: hanya ambil penempatan dengan status "active"
+        //     });
+        // }
 
         // Tambahkan kondisi berdasarkan role user
         if (Auth::user()->role == 2) {

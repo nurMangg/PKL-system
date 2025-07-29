@@ -14,6 +14,7 @@ class Pengajuan extends Model
     protected $fillable = [
         'nim',
         'jurusan',
+        'id_ta',
         'perusahaan_tujuan',
         'tanggal_pengajuan',
         'status',
@@ -21,7 +22,8 @@ class Pengajuan extends Model
         'tanggal_selesai',
         'kepada_yth',
         'file_balasan_path',
-        'no_surat'
+        'no_surat',
+        'id_instrukturId'
     ];
 
     // protected $table = 'pengajuan_surat';
@@ -35,5 +37,15 @@ class Pengajuan extends Model
     //     'perusahaan_tujuan',
     //     'tanggal_pengajuan',
     // ];
+
+    public function instruktur()
+    {
+        return $this->belongsTo(Instruktur::class, 'id_instrukturId', 'id_instruktur');
+    }
+
+    public function dudi()
+    {
+        return $this->belongsTo(Dudi::class, 'perusahaan_tujuan', 'id_dudi');
+    }
 }
 

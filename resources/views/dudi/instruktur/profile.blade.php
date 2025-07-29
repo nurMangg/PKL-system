@@ -113,13 +113,17 @@
                             </li>
                             <li class="nav-item">
                                 <button class="nav-link" data-bs-toggle="tab"
+                                    data-bs-target="#profile-quesioner">Quisioner</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab"
                                     data-bs-target="#profile-kendala-saran">Kendala & Saran</button>
                             </li>
                             <li class="nav-item">
                                 <button class="nav-link" data-bs-toggle="tab"
                                     data-bs-target="#profile-change-password">Akun</button>
                             </li>
-                            
+
                         @endif
                     </ul>
                     <div class="tab-content pt-2">
@@ -129,7 +133,7 @@
                     <div class="modal fade" id="absensiModal" tabindex="-1" aria-labelledby="absensiModalLabel" aria-hidden="true">
                     <div class="modal-dialog">
                         <div class="modal-content">
-                        
+
                         <!-- Header -->
                         <div class="modal-header">
                             <h5 class="modal-title" id="absensiModalLabel">Form Absensi Siswa</h5>
@@ -142,7 +146,7 @@
                             <div class="mb-3">
                                 <label for="nis" class="form-label">Nama Siswa</label>
                                 <input type="text" class="form-control" id="nis" placeholder="Masukkan nama siswa">
-                               
+
 
                             </div>
                             <div class="mb-3">
@@ -172,7 +176,7 @@
                     </div>
                         <!-- Data Siswa Tab -->
                         <div class="tab-pane fade show active profile-data-siswa" id="profile-data-siswa">
-                            
+
                             <div class="table-responsive">
                                 <table class="table table-striped table-sm" id="table-data-siswa">
                                     <thead>
@@ -274,7 +278,36 @@
                                     </table>
                                 </div>
                             </div>
-                            
+
+                            <div class="tab-pane fade profile-quesioner" id="profile-quesioner">
+                                <form id="questionForm" class="row g-3 needs-validation" novalidate>
+                                    @csrf
+                                    <input type="hidden" id="stt" name="stt" value="0">
+                                    <input type="hidden" id="id_instruktur" name="id_instruktur" value="{{ $instruktur->id_instruktur }}">
+                                    <div class="mb-3">
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>Quesioner</th>
+                                                    <th>Tanggapan</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="quesioner-table">
+                                            </tbody>
+                                        </table>
+                                        <div id="spinner" style="display: none; text-align: center; margin-top: 20px;">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="invalid-feedback"> Harap jawab semua pertanyaan. </div>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary">Simpan</button>
+                                </form>
+                            </div>
+
                             <!-- Change Password Tab -->
                             <div class="tab-pane fade pt-3" id="profile-change-password">
                                 <!-- Change Password Form -->
@@ -467,7 +500,7 @@
             });
 
             // absensi
-           
+
             // js keterangan
                     $('#table-presensi').on('change', '.keterangan-select', function() {
             var id = $(this).data('id'); // ambil id baris (pastikan ada di data yang dikirim dari server)
@@ -610,6 +643,9 @@
                 table2.ajax.reload();
                 table3.ajax.reload();
                 table4.ajax.reload();
+                if (typeof getQuestion === "function") {
+                    getQuestion(); // Panggil fungsi jika ada
+                }
             });
             @if (session('id_instruktur') == $instruktur->id_instruktur || in_array(auth()->user()->role, [1, 2]))
 
@@ -754,43 +790,84 @@
     @if (session('id_instruktur') == $instruktur->id_instruktur || in_array(auth()->user()->role, [1, 2]))
         <script>
             $(document).ready(function() {
-
-                $(`#nis`).select2({
-                theme: 'bootstrap-5',
-                dropdownParent: $("#pengajuanModal"),
-                placeholder: 'Cari Siswa NIS/Nama...',
-                minimumInputLength: 1,
-                ajax: {
-                    url: "{{ route('siswa.searchh') }}",
-                    dataType: 'json',
-                    delay: 250,
-                    data: function(params) {
-                        return {
-                            q: params.term,
-                            k: 'penempatan',
-                        };
-                    },
-                    processResults: function(data) {
-                        return {
-                            results: $.map(data, function(item) {
-                                var txt = '';
-                                var j = 0;
-                                item.penempatan.forEach(el => {
-                                    if (el.id_ta == $('#id_ta').val()) {
-                                        j++;
-                                        txt = ` (Sudah di Tempatkan ${j}x)`;
-                                    }
-                                });
-                                return {
-                                    id: item.nis,
-                                    text: item.nis + ' - ' + item.nama + txt // Tampilkan data siswa
-                                }
-                            })
-                        };
-                    },
-                    cache: true
+                if (typeof getQuestion === "function") {
+                    getQuestion(); // Panggil fungsi jika ada
                 }
-            });
+
+                $('#nis').select2({
+                    theme: 'bootstrap-5',
+                    dropdownParent: $("#pengajuanModal"),
+                    placeholder: 'Cari Siswa NIS/Nama...',
+                    minimumInputLength: 1,
+                    ajax: {
+                        url: "{{ route('siswa.searchh') }}",
+                        dataType: 'json',
+                        delay: 250,
+                        data: function(params) {
+                            return {
+                                q: params.term,
+                                k: 'penempatan',
+                            };
+                        },
+                        processResults: function(data) {
+                            return {
+                                results: $.map(data, function(item) {
+                                    var txt = '';
+                                    var j = 0;
+                                    item.penempatan.forEach(el => {
+                                        if (el.id_ta == $('#id_ta').val()) {
+                                            j++;
+                                            txt = ` (Sudah di Tempatkan ${j}x)`;
+                                        }
+                                    });
+                                    return {
+                                        id: item.nis,
+                                        text: item.nis + ' - ' + item.nama + txt // Tampilkan data siswa
+                                    }
+                                })
+                            };
+                        },
+                        cache: true
+                    }
+                });
+
+                $('#questionForm').on('submit', function(e) {
+                    e.preventDefault();
+                    var form = $(this)[0];
+                    if (form.checkValidity() === false) {
+                        e.stopPropagation();
+                    } else {
+                        var url = "{{ route('d.instruktur.quesioner.upsert') }}";
+                        var formData = $(this).serialize();
+
+                        $.ajax({
+                            url: url,
+                            method: "POST",
+                            data: formData,
+                            success: function(response) {
+                                getNilaiQuestion();
+                                if (response.status) {
+                                    Toast.fire({
+                                        icon: "success",
+                                        title: response.message
+                                    });
+                                } else {
+                                    Toast.fire({
+                                        icon: "error",
+                                        title: response.message
+                                    });
+                                }
+                            },
+                            error: function(response) {
+                                Toast.fire({
+                                    icon: "error",
+                                    title: 'Woops! Fatal Error.'
+                                });
+                            }
+                        });
+                    }
+                });
+
                 // Handle password change submission
                 $('#changePasswordForm').on('submit', function(e) {
                     e.preventDefault();
@@ -844,8 +921,115 @@
                 });
             });
         </script>
-
     @endif
+
+    <script>
+        function getQuestion() {
+            $('#spinner').show();
+
+            $.ajax({
+                url: "{{ route('d.instruktur.quesioner') }}",
+                type: "GET",
+                data: {
+                    id_ta: $('#id_ta').val(),
+                },
+                success: function(response) {
+                    $('#spinner').hide();
+
+                    if (response.status === 'success') {
+                        const questions = response.data;
+                        const tableBody = $('#quesioner-table');
+                        tableBody.empty();
+
+                        // Kelompokkan soal berdasarkan master
+                        const grouped = {};
+
+                        questions.forEach(q => {
+                            if (!grouped[q.id_master]) {
+                                grouped[q.id_master] = {
+                                    master: q.master,
+                                    items: []
+                                };
+                            }
+                            grouped[q.id_master].items.push(q);
+                        });
+
+                        // Render ke tabel
+                        Object.values(grouped).forEach((group, idx) => {
+                            const masterHeader = `
+                    <tr>
+                        <td colspan="2"><strong>${group.master}</strong></td>
+                    </tr>
+                `;
+                            tableBody.append(masterHeader);
+
+                            group.items.forEach((question, i) => {
+                                const row = `
+                        <tr>
+                            <td>
+                                ${i + 1}. ${question.soal}
+                                <input type="hidden" name="id_nilai[${question.id_quesioner}]" value="">
+                            </td>
+                            <td>
+                                <textarea name="quesioner[${question.id_quesioner}]" required></textarea>
+                            </td>
+                        </tr>
+                    `;
+                                tableBody.append(row);
+                            });
+                        });
+
+                        getNilaiQuestion();
+                    } else {
+                        Toast.fire({
+                            icon: "error",
+                            title: response.message
+                        });
+                    }
+                },
+                error: function() {
+                    $('#spinner').hide();
+                    alert('Gagal memuat data pertanyaan.');
+                }
+            });
+        }
+
+
+        function getNilaiQuestion() {
+            var id_instruktur = '{{ $instruktur->id_instruktur }}';
+            var id_ta = $('#id_ta').val();
+
+            $.ajax({
+                url: "{{ url('d/instruktur/quesioner/edit') }}/" + id_instruktur + "/" + id_ta,
+                method: 'GET',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        var data = response.data;
+
+                        $('#stt').val('1');
+                        $('#id_nilai').val(data.id_nilai);
+
+                        // Kosongkan semua textarea dan input hidden nilai
+                        $('textarea[name^="quesioner"]').val('');
+                        $('input[name^="id_nilai"]').val('');
+
+                        // Isi kembali dengan data dari server
+                        data.quesioner.forEach(function(question) {
+                            $(`textarea[name="quesioner[${question.id_quesioner}]"]`).val(question
+                                .nilai);
+                            $(`input[name="id_nilai[${question.id_quesioner}]"]`).val(question
+                                .id_nilai);
+                        });
+                    } else {
+                        $('#stt').val('0');
+                    }
+                },
+                error: function() {
+                    console.error('Terjadi kesalahan saat mengambil data quesioner.');
+                }
+            });
+        }
+    </script>
 @endsection
 
 @section('css')

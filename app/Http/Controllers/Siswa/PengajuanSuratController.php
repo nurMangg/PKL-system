@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Siswa;
 use App\Http\Controllers\Controller;
 use App\Models\Siswa;
 use App\Models\Dudi;
+use App\Models\Penempatan;
 use Illuminate\Http\Request;
 use App\Models\Pengajuan;
 use App\Models\PengajuanDetail;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\Validator;
 
@@ -26,6 +28,7 @@ class PengajuanSuratController extends Controller
         'namaSiswa' => 'required', // Pastikan namaSiswa adalah array dengan minimal 4 item
         'namaSiswa.*' => 'required|string|max:255', // Validasi setiap elemen array
         'perusahaan_tujuan' => 'required|string|max:255',
+        'id_ta' => 'required|exists:thn_akademik,id_ta',
         'tanggal_mulai' => 'required|date',
         'tanggal_selesai' => 'required|date',
     ]);
@@ -36,7 +39,8 @@ class PengajuanSuratController extends Controller
 
     $pengajuan =Pengajuan::create([
         // 'jurusan' => Siswa::where('nis', $nama)->first()->jurusan->jurusan,
-        'perusahaan_tujuan' => Dudi::where('id_dudi', $request->perusahaan_tujuan)->first()->nama,
+        'perusahaan_tujuan' => $request->perusahaan_tujuan,
+        'id_ta' => $request->id_ta,
         'tanggal_pengajuan' => date('Y-m-d'),
         'tanggal_mulai' => $request->tanggal_mulai,
         'tanggal_selesai' => $request->tanggal_selesai,
@@ -95,14 +99,18 @@ public function search(Request $request)
                         return '<span class="badge bg-warning">Menunggu</span>';
                     }
                 })
+                ->editColumn('perusahaan_tujuan', function ($row) {
+                    return Dudi::where('id_dudi', $row->pengajuan->perusahaan_tujuan)->first()->nama;
+                })
                 ->addColumn('namasiswa', function ($row) {
                     return optional(Siswa::where('nis', $row->nim)->first())->nama;
                 })
-                ->editColumn('perusahaan_tujuan', function ($row) {
-                    return Pengajuan::where('id', $row->id_surat)->first()->perusahaan_tujuan;
-                })
                 ->editColumn('tanggal_pengajuan', function ($row) {
                     return Pengajuan::where('id', $row->id_surat)->first()->tanggal_pengajuan;
+                })
+                ->addColumn('detailsiswa', function ($row) {
+                    return '<button type="button" class="btn btn-outline-secondary btn-sm detail-btn" style="border-color: transparent;" data-id="' . $row->id_surat . '">List Siswa</button>';
+                    
                 })
                 ->editColumn('tanggal_mulai', function ($row) {
                     return Pengajuan::where('id', $row->id_surat)->first()->tanggal_mulai;
@@ -125,7 +133,7 @@ public function search(Request $request)
 
                 ->addColumn('aksi', function ($row) {
                     $pengajuan = Pengajuan::where('id', $row->id_surat)->first();
-                    if ($pengajuan->status === 'Disetujui' || $pengajuan->status === 'Diterima') {
+                    if ($pengajuan->status === 'Disetujui' || $pengajuan->status === 'Diterima' || $pengajuan->status === 'Ditempatkan') {
                         return '
                             <a class="btn btn-sm btn-success" href="/surat/' . $row->id_surat . '">Download</a>
                         ';
@@ -135,11 +143,12 @@ public function search(Request $request)
                 })
                 ->addColumn('balasan_dudi', function($row) {
                     $pengajuan = Pengajuan::where('id', $row->id_surat)->first();
+                    $dudi = Dudi::findOrFail($pengajuan->perusahaan_tujuan);
                     if ($pengajuan->status === 'Disetujui' || $pengajuan->status === 'Diterima') {
                         if($pengajuan->file_balasan_path == null) {
                             return '
                             <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-outline-success btn-diterima" data-id="' . $row->id_surat . '">Diterima</button>
+                                <button class="btn btn-sm btn-outline-success btn-diterima" data-id="' . $row->id_surat . '" data-idDudi="' . $dudi->id_dudi . '" data-namaDudi="' . $dudi->nama . '">Diterima</button>
                                 <button class="btn btn-sm btn-outline-danger btn-ditolak" data-id="' . $row->id_surat . '">Ditolak</button>
                             </div>
                         ';
@@ -147,11 +156,15 @@ public function search(Request $request)
                         else {
                             return '<a class="btn btn-sm btn-outline-primary" href="' . asset('storage/' . $pengajuan->file_balasan_path) . '" target="_blank">Lihat Surat</a>';
                         }
-                    } else {
+                    } else if ($pengajuan->status === 'Ditempatkan') {
+                        return '<a class="btn btn-sm btn-outline-primary" href="' . asset('storage/' . $pengajuan->file_balasan_path) . '" target="_blank">Lihat Surat</a>';
+
+                    }
+                    else {
                         return '';
                     }
                 })
-                ->rawColumns(['status', 'aksi', 'balasan_dudi']) // Pastikan kolom HTML dirender
+                ->rawColumns(['detailsiswa','status', 'aksi', 'balasan_dudi']) // Pastikan kolom HTML dirender
                 ->make(true);
         }
     }
@@ -169,17 +182,58 @@ public function search(Request $request)
         ]);
     }
 
-    public function diTempatkan(Request $request){
+    public function diTempatkan(Request $request)
+    {
         $validated = $request->validate([
-            'id_pengajuan' => 'nullable|string',
+            'id' => 'required|integer',
+            'guru' => 'required|integer',
         ]);
 
-        $pengajuan = Pengajuan::findOrFail($request->id_pengajuan);
-        $pengajuan->update(['status' => 'Ditempatkan']);
-        return response()->json([
-            'status' => true,
-            'message' => 'Data Berhasil Ditempatkan.'
-        ]);
+        DB::beginTransaction();
+        try {
+            // Ambil data pengajuan
+            $pengajuan = Pengajuan::findOrFail($request->id);
+
+            // Update status menjadi Ditempatkan
+            $pengajuan->update(['status' => 'Ditempatkan']);
+
+            // Ambil semua siswa yang mengajukan (detail)
+            $detailSiswa = PengajuanDetail::where('id_surat', $pengajuan->id)->get();
+
+            // Cari data kelompok terakhir di penempatan
+            $penempatanTerakhir = Penempatan::where('id_ta', $pengajuan->id_ta)
+                ->orderBy('kelompok', 'desc')
+                ->first();
+
+            $kelompokTerakhir = $penempatanTerakhir ? $penempatanTerakhir->kelompok : 0;
+
+            foreach ($detailSiswa as $detail) {
+                Penempatan::create([
+                    'nis' => $detail->nim,
+                    'id_ta' => $pengajuan->id_ta,
+                    'id_guru' => $request->guru,
+                    'kelompok' => $kelompokTerakhir + 1,
+                    'id_instruktur' => $pengajuan->id_instrukturId,
+                    'created_by' => Auth::id(),
+                    'is_active' => 1,
+                    'tanggal_mulai' => $pengajuan->tanggal_mulai,
+                    'tanggal_selesai' => $pengajuan->tanggal_selesai,
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Data berhasil ditempatkan.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal menempatkan: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function cekPengajuan(Request $request) {
@@ -298,7 +352,7 @@ public function search(Request $request)
                 return optional(Siswa::where('nis', $row->nim)->first())->nama;
             })
             ->editColumn('perusahaan_tujuan', function($row) {
-                $dt = Dudi::where("nama", $row->perusahaan_tujuan)->first();
+                $dt = Dudi::where('id_dudi', $row->perusahaan_tujuan)->first();
                 return '<a href="' . url("/d/dudi?id=" . $dt->id_dudi) . '">' . $dt->nama . '</a>';
             })
             ->addColumn('aksi', function ($row) {

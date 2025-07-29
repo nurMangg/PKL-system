@@ -127,6 +127,28 @@
         </div>
     </div>
 
+    <!-- Modal untuk memilih guru -->
+    <div class="modal fade" id="guruModal" tabindex="-1" aria-labelledby="guruModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="guruModalLabel">Pilih Guru Pembimbing</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formGuru">
+                        <input type="hidden" id="guruId" name="id">
+                        <div class="mb-3">
+                            <label for="guru" class="form-label">Guru</label>
+                            <select type="text" id="guru" class="form-select" name="guru" required></select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Simpan</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="pengajuanSuratModal" tabindex="-1" aria-labelledby="pengajuanSuratModal"
         aria-hidden="true">
         <div class="modal-dialog">
@@ -301,6 +323,30 @@
 
         $(document).on('click', '.ditempatkan-btn', function() {
             var id = $(this).data('id');
+            $.ajax({
+                url: "{{ route('pengajuan.surat.guru', '') }}/" + id,
+                method: "GET",
+                success: function(response) {
+                    $('#guruId').val(id);
+                    var select = $('#guru');
+                    select.find('option').remove();
+                    $.each(response.results, function(key, value) {
+                        select.append('<option value="' + value.id_guru + '">' + value.nama + '</option>');
+                    });
+                    $('#guruModal').modal('show');
+                }
+            });
+
+            
+
+
+        });
+
+        $('#formGuru').on('submit', function(e) {
+            e.preventDefault();
+            var form = $(this);
+            var btn = form.find('button[type="submit"]');
+            btn.prop('disabled', true).text('Menyimpan...');
 
             Swal.fire({
                 title: 'Konfirmasi',
@@ -314,47 +360,43 @@
                     $.ajax({
                         url: "{{ route('siswa.pengajuan.isTempatkan') }}",
                         method: "POST",
-                        data: {
-                            id_pengajuan: id,
-                            _token: "{{ csrf_token() }}"
-                        },
+                        data: form.serialize(),
                         success: function(res) {
+                            btn.prop('disabled', false).text('Simpan');
                             if (res.status || res.success) {
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'Berhasil',
                                     text: 'Data Berhasil Ditempatkan.'
                                 }).then(() => {
-                                    // reload datatable jika ada
                                     $('#pengajuan-surat').DataTable().ajax.reload();
-
-                                    $('#pengajuanTable').DataTable()
-                                            .ajax.reload();
-
+                                    if ($.fn.DataTable.isDataTable('#pengajuanTable')) {
+                                        $('#pengajuanTable').DataTable().ajax.reload();
+                                    } else {
+                                        location.reload();
+                                    }
                                 });
                             } else {
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'Gagal',
-                                    text: res.message ||
-                                        'Gagal Menempatkan.'
+                                    text: res.message || 'Gagal Menempatkan.'
                                 });
                             }
                         },
                         error: function(xhr) {
+                            btn.prop('disabled', false).text('Simpan');
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Gagal',
-                                text: xhr.responseJSON && xhr.responseJSON
-                                    .message ? xhr.responseJSON.message :
-                                    'Terjadi kesalahan saat menolak surat.'
+                                text: xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Terjadi kesalahan saat menolak surat.'
                             });
                         }
                     });
+                } else {
+                    btn.prop('disabled', false).text('Simpan');
                 }
             });
-
-
         });
 
         $('#tullisNoSurat').on('submit', function(e) {

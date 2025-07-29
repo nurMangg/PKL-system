@@ -19,9 +19,11 @@ class Instruktur extends Model
     ];
 
     public function dudi()
-    {
-        return $this->belongsTo(Dudi::class, 'id_dudi', 'id_dudi')->where('dudi.is_active', true);
-    }
+{
+    return $this->belongsTo(Dudi::class, 'id_dudi', 'id_dudi')
+                ->where('dudi.is_active', true);
+}
+
 
     public function user()
     {
@@ -35,7 +37,7 @@ class Instruktur extends Model
 
     public function nilaiQuesioner()
     {
-        return $this->hasMany(NilaiQuesioner::class, 'id_instruktur', 'id_instruktur')->where('nilai_quisioner.is_active', true);
+        return $this->hasMany(NilaiQuesioner::class, 'id_instruktur', 'id_instruktur')->where('nilai_quesioner.is_active', true);
     }
 
     public function penempatan()

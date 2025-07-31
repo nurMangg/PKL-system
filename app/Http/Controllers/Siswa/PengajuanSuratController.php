@@ -110,7 +110,7 @@ public function search(Request $request)
                 })
                 ->addColumn('detailsiswa', function ($row) {
                     return '<button type="button" class="btn btn-outline-secondary btn-sm detail-btn" style="border-color: transparent;" data-id="' . $row->id_surat . '">List Siswa</button>';
-                    
+
                 })
                 ->editColumn('tanggal_mulai', function ($row) {
                     return Pengajuan::where('id', $row->id_surat)->first()->tanggal_mulai;
@@ -175,7 +175,7 @@ public function search(Request $request)
         ]);
 
         $pengajuan = Pengajuan::findOrFail($request->id_pengajuan);
-        $pengajuan->update(['status' => 'Rejected']);
+        $pengajuan->update(['status' => 'Ditolak']);
         return response()->json([
             'status' => true,
             'message' => 'Surat berhasil ditolak.'

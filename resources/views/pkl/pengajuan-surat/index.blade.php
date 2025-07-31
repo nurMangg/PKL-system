@@ -25,7 +25,6 @@
                         <th>Tgl Selai</th>
                         <th>Kepada Yth</th>
                         <th>Detail</th>
-                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -337,7 +336,7 @@
                 }
             });
 
-            
+
 
 
         });
@@ -492,7 +491,7 @@
                     },
                 ],
                 order: [
-                    [4, 'desc']
+                    [2, 'desc']
                 ], // Urutkan berdasarkan tanggal_pengajuan descending
             });
 

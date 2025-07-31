@@ -30,6 +30,7 @@
                 <table class="table table-striped table-sm" id="myTable">
                     <thead>
                         <tr>
+                            <th>Instruktur</th>
                             <th>Tahun Akademik</th>
                             <th>Siswa</th>
                             <th>Rata-rata Nilai</th>
@@ -219,16 +220,20 @@
                     type: 'POST',
                 },
                 columns: [{
+                        data: 'nama_instruktur',
+                        name: 'nama_instruktur'
+                    },
+                    {
+                        data: 'dudi',
+                        name: 'dudi'
+                    }
+                    {
                         data: 'tahun_akademik',
                         name: 'tahun_akademik'
                     },
                     {
-                        data: 'nama_siswa',
-                        name: 'nama_siswa'
-                    },
-                    {
-                        data: 'rata_rata_nilai',
-                        name: 'rata_rata_nilai'
+                        data: 'created_at',
+                        name: 'created_at'
                     },
                     {
                         data: 'action',

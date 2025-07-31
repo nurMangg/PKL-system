@@ -81,7 +81,7 @@
         width: 100%;
         border-collapse: collapse;
         margin-top: 10px;
-        font-size: 10px; /* Compact text for tables */
+        font-size: 12px; /* Compact text for tables */
     }
 
     .table th, .table td {
@@ -139,7 +139,7 @@
             <h1>YAYASAN PENDIDIKAN EKONOMI</h1>
             <h2>SMK KARYA BHAKTI BREBES</h2>
             <p>Jl. Taman Siswa No. 1 Telp. (0283) 671284, 673241 Fax. (0283) 67184 Brebes 52212</p>
-            <p>Website: <a href="http://www.smk-karyabhakti.fk" target="_blank">www.smk-karyabhakti.fk</a> 
+            <p>Website: <a href="http://www.smk-karyabhakti.fk" target="_blank">www.smk-karyabhakti.fk</a>
                 Email: <a href="mailto:karyabhakti.brebes@gmail.com">karyabhakti.brebes@gmail.com</a></p>
             <p><strong>Terakreditasi: A</strong></p>
         </div>
@@ -153,7 +153,7 @@
             <table>
                 <tr>
                     <td style="width: 70%; vertical-align: top;">
-                        <p>Nomor: 143/I.03.5.SMK-KB/M 2025</p>
+                        <p>Nomor: {{ $surat->no_surat }}</p>
                         <p>Lampiran: -</p>
                         <p>Hal: <strong>Permohonan Ijin Praktik Kerja Lapangan (PKL)</strong></p>
                     </td>
@@ -168,7 +168,7 @@
             </p>
         </div>
 
-        <p>
+        <p class="text-justify">
             Dalam rangka menumbuhkembangkan karakter dan budaya kerja yang profesional pada Peserta Didik,
             meningkatkan kompetensi Peserta Didik sesuai kurikulum dan kebutuhan dunia kerja,
             dan menyiapkan kemandirian Peserta Didik untuk bekerja dan/atau berwirausaha,
@@ -177,9 +177,8 @@
             (IDUKA) yang dianggap relevan.
         </p>
 
-        <p>
-            Sehubungan hal tersebut, maka kami mohon bantuan Bapak/Ibu/Saudara selaku
-            Pimpinan/Kepala/Manager untuk berkenan menerima Peserta Didik kami guna melaksanakan PKL
+        <p class="text-justify">
+            Sehubungan hal tersebut, maka kami mohon bantuan Bapak/Ibu/Saudara selaku Pimpinan/Kepala/Manager untuk berkenan menerima Peserta Didik kami guna melaksanakan PKL
             di institusi yang Bapak/Ibu/Saudara pimpin dengan waktu pelaksanaan mulai dari tanggal
             <strong>{{$surat->tanggal_mulai}} sampai dengan {{$surat->tanggal_selesai}}</strong>.
         </p>
@@ -207,7 +206,7 @@
 
         <!-- Signature -->
         <div class="signature">
-            <p>Brebes, Mei 2023</p>
+            <p>{{ \Carbon\Carbon::now()->locale('id_ID')->translatedFormat('d F Y') }}</p>
             <p>Kepala Sekolah,</p>
             <div class="name">
                 ADHI NUR ARIFIANTO, SH
@@ -235,6 +234,6 @@
             </tr>
         </table>
     </div>
-    
+
 </body>
 </html>

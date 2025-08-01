@@ -10,10 +10,15 @@ use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Concerns\SkipsOnError;
+use Maatwebsite\Excel\Concerns\SkipsErrors;
 use Carbon\Carbon;
 
-class InstrukturImport implements ToModel, WithHeadingRow, WithChunkReading
+class InstrukturImport implements ToModel, WithHeadingRow, WithChunkReading, WithValidation, SkipsOnError
 {
+    use SkipsErrors;
+
     /**
      * Mengonversi baris Excel menjadi model Instruktur.
      *
@@ -22,47 +27,58 @@ class InstrukturImport implements ToModel, WithHeadingRow, WithChunkReading
      */
     public function model(array $row)
     {
-        // Cari id_dudi yang valid (misalnya, id_dudi harus ada di tabel Dudi)
-        $dudi = Dudi::find($row['id_dudi']);
-        if (!$dudi) {
-            return null; // Skip jika id_dudi tidak ditemukan
+        // Validasi data yang diperlukan
+        if (empty($row['id_instruktur']) || empty($row['nama']) || empty($row['email']) || empty($row['id_dudi'])) {
+            return null; // Skip baris yang tidak valid
         }
 
-        // Jika id_instruktur sudah ada, update atau buat data baru
-        $instruktur = Instruktur::updateOrCreate(
-            ['id_instruktur' => $row['id_instruktur']], // Mencari berdasarkan id_instruktur
-            [
-                'nama' => $row['nama'],
-                'gender' => $row['gender'],
-                'no_kontak' => $row['no_kontak'],
-                'email' => $row['email'],
-                'alamat' => $row['alamat'],
-                'id_dudi' => $row['id_dudi'],
-                'is_active' => isset($row['is_active']) ? $row['is_active'] : 1, // Default aktif
-                'updated_at' => Carbon::now(),
-                'updated_by' => Auth::id(),
-            ]
-        );
+        try {
+            // Cari id_dudi yang valid (misalnya, id_dudi harus ada di tabel Dudi)
+            $dudi = Dudi::find(trim($row['id_dudi']));
+            if (!$dudi) {
+                \Log::warning('Dudi not found for id_dudi: ' . $row['id_dudi']);
+                return null; // Skip jika id_dudi tidak ditemukan
+            }
 
-        // Jika instruktur baru dibuat, buatkan user baru
-        $userData = User::where('username', $row['id_instruktur'])->first();
-        if (!$userData) {
-            // Membuat user baru menggunakan id_instruktur sebagai username
-            $user = User::create([
-                'username' => $row['id_instruktur'], // Gunakan id_instruktur sebagai username
-                'password' => Hash::make($row['id_instruktur']), // Gunakan id_instruktur sebagai password yang di-hash
-                'role' => '4', // Role 4, atau sesuaikan dengan kebutuhan Anda
-            ]);
+            // Jika id_instruktur sudah ada, update atau buat data baru
+            $instruktur = Instruktur::updateOrCreate(
+                ['id_instruktur' => trim($row['id_instruktur'])], // Mencari berdasarkan id_instruktur
+                [
+                    'nama' => trim($row['nama']),
+                    'gender' => trim($row['gender'] ?? 'L'),
+                    'no_kontak' => trim($row['no_kontak'] ?? ''),
+                    'email' => trim($row['email']),
+                    'alamat' => trim($row['alamat'] ?? ''),
+                    'id_dudi' => trim($row['id_dudi']),
+                    'is_active' => 1, // Default aktif
+                    'updated_at' => Carbon::now(),
+                    'updated_by' => Auth::id() ?? 1, // Fallback jika tidak ada user
+                ]
+            );
 
-            // Hubungkan user dengan instruktur yang baru dibuat
-            $instruktur->update([
-                'id_user' => $user->id,
-                'created_by' => Auth::id(),
-                'created_at' => Carbon::now(),
-            ]);
+            // Jika instruktur baru dibuat, buatkan user baru
+            $userData = User::where('username', trim($row['id_instruktur']))->first();
+            if (!$userData) {
+                // Membuat user baru menggunakan id_instruktur sebagai username
+                $user = User::create([
+                    'username' => trim($row['id_instruktur']), // Gunakan id_instruktur sebagai username
+                    'password' => Hash::make(trim($row['id_instruktur'])), // Gunakan id_instruktur sebagai password yang di-hash
+                    'role' => '4', // Role 4, atau sesuaikan dengan kebutuhan Anda
+                ]);
+
+                // Hubungkan user dengan instruktur yang baru dibuat
+                $instruktur->update([
+                    'id_user' => $user->id,
+                    'created_by' => Auth::id() ?? 1,
+                    'created_at' => Carbon::now(),
+                ]);
+            }
+
+            return $instruktur;
+        } catch (\Exception $e) {
+            \Log::error('Error importing instruktur: ' . $e->getMessage() . ' for row: ' . json_encode($row));
+            return null; // Skip baris yang error
         }
-
-        return $instruktur;
     }
 
     /**
@@ -73,5 +89,30 @@ class InstrukturImport implements ToModel, WithHeadingRow, WithChunkReading
     public function chunkSize(): int
     {
         return 500; // Menggunakan chunk sebesar 500 baris
+    }
+
+    /**
+     * Validation rules
+     */
+    public function rules(): array
+    {
+        return [
+            'id_instruktur' => 'required|max:20',
+            'nama' => 'required|string|max:100',
+            'email' => 'required|email|max:100',
+            'gender' => 'nullable|string|in:L,P',
+            'no_kontak' => 'nullable|string|max:20',
+            'alamat' => 'nullable|string|max:255',
+            'id_dudi' => 'required|string|max:20',
+        ];
+    }
+
+    /**
+     * Handle errors during import
+     */
+    public function onError(\Throwable $e)
+    {
+        // Log error atau handle sesuai kebutuhan
+        \Log::error('Import Instruktur Error: ' . $e->getMessage());
     }
 }

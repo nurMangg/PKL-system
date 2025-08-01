@@ -47,5 +47,11 @@ class Pengajuan extends Model
     {
         return $this->belongsTo(Dudi::class, 'perusahaan_tujuan', 'id_dudi');
     }
+
+    public function pengajuanDetail()
+    {
+        return $this->hasMany(PengajuanDetail::class, 'id_surat', 'id');
+    }
+
 }
 

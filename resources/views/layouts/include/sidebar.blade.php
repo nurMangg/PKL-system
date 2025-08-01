@@ -32,7 +32,7 @@
 
                 <li>
                     <a class="nav-link collapsed" href="{{ route('nilai-quesioner') }}">
-                        <i class="bi bi-circle"></i> <span>Nilai Quisioner</span>
+                        <i class="bi bi-circle"></i> <span>Nilai Kuesioner</span>
                     </a>
                 </li>
                 <li>
@@ -45,7 +45,7 @@
                         <i class="bi bi-circle"></i> <span>Penilaian</span>
                     </a>
                 </li>
-                
+
             </ul>
         </li><!-- End PKL Nav -->
 

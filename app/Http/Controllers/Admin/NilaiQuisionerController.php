@@ -12,33 +12,59 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Facades\DataTables;
+use App\Models\ThnAkademik;
 
 class NilaiQuisionerController extends Controller
 {
     public function index()
     {
-        $thnAkademik = getActiveAcademicYear();
-        $questions = Quesioner::where(['is_active' => true, 'id_ta' => $thnAkademik['id_ta']])->get();
-        return view('pkl.nilai-quesioner.index', compact('questions'));
+        $aktifAkademik = getActiveAcademicYear();
+        $thnAkademik = ThnAkademik::where('is_active', true)->orderBy('tahun_akademik', 'desc')->get();
+        $questions = Quesioner::where(['is_active' => true, 'id_ta' => $aktifAkademik['id_ta']])->get();
+        return view('pkl.nilai-quesioner.index', compact('questions', 'thnAkademik', 'aktifAkademik'));
+    }
+
+    public function getQuestions(Request $request)
+    {
+        $questions = Quesioner::where(['is_active' => true, 'id_ta' => $request->id_ta])->get();
+        return response()->json($questions);
     }
 
     public function data(Request $request)
     {
-        $data = NilaiQuesioner::with(['siswa', 'thnAkademik'])
-            ->selectRaw('siswa.nis, siswa.nama as nama_siswa, thn_akademik.id_ta, thn_akademik.tahun_akademik, (AVG(nilai)*100) as rata_rata_nilai')
-            ->join('siswa', 'nilai_quesioner.nis', '=', 'siswa.nis')
-            ->join('quesioner', 'nilai_quesioner.id_quesioner', '=', 'quesioner.id_quesioner')
-            ->join('thn_akademik', 'quesioner.id_ta', '=', 'thn_akademik.id_ta')
-            ->where('nilai_quesioner.is_active', true)
-            ->groupBy('nis', 'thn_akademik.id_ta', 'siswa.nama','thn_akademik.tahun_akademik');
+        $data = NilaiQuesioner::with(['instruktur', 'thnAkademik'])
+            ->selectRaw('instruktur.id_instruktur, instruktur.nama as nama_instruktur, thn_akademik.id_ta, thn_akademik.tahun_akademik, nilai_quesioner.created_at')
+            ->join('instruktur', 'nilai_quesioner.id_instruktur', '=', 'instruktur.id_instruktur')
+            ->join('thn_akademik', 'nilai_quesioner.id_ta', '=', 'thn_akademik.id_ta')
+            ->where('nilai_quesioner.id_ta', $request->id_ta)
+            ->groupBy('instruktur.id_instruktur', 'thn_akademik.id_ta', 'instruktur.nama','thn_akademik.tahun_akademik', 'nilai_quesioner.created_at');
+
         return DataTables::of($data)
-            ->addColumn('nama_siswa', function ($dt) {
-                return $dt->siswa->nis.'<br><a href="' . url("/d/siswa?nis=" . $dt->siswa->nis) . '">' . $dt->siswa->nama. '</a>';
-            })
             ->addColumn('action', function ($dt) {
-                return ' <button class="btn btn-sm btn-primary btn-edit"><i class="bi bi-pencil-fill"></i></button> | <button class="btn btn-sm btn-danger btn-delete"><i class="bi bi-trash-fill"></i></button>';
+                return ' <button class="btn btn-sm btn-primary btn-lihat" data-id="'.$dt->id_instruktur.'"><i class="bi bi-eye-fill"></i></button> | <button class="btn btn-sm btn-danger btn-delete" data-id="'.$dt->id_instruktur.'"><i class="bi bi-trash-fill"></i></button>';
             })
-            ->rawColumns(['action','nama_siswa'])
+            ->editColumn('nama_instruktur', function ($dt) {
+                if ($dt) {
+                    return '<a href="' . url("/d/instruktur?id=" . $dt->id_instruktur) . '">' . $dt->nama_instruktur . '</a>';
+                }
+                return '-';
+            })
+            ->addColumn('dudi', function ($dt) {
+                if ($dt) {
+                    return '<a href="' . url("/d/dudi?id=" . $dt->instruktur->dudi->id_dudi) . '">' . $dt->instruktur->dudi->nama . '</a>';
+                }
+                return '-';
+            })
+            ->editColumn('created_at', function ($dt) {
+                // Tampilkan hari dan tanggal dengan nama bulan dalam bahasa Indonesia
+                \Carbon\Carbon::setLocale('id');
+                $hari = $dt->created_at->isoFormat('dddd'); // Nama hari dalam bahasa Indonesia
+                $tanggal = $dt->created_at->format('d');
+                $bulan = $dt->created_at->isoFormat('MMMM'); // Nama bulan dalam bahasa Indonesia
+                $tahun = $dt->created_at->format('Y');
+                return "$hari, $tanggal $bulan $tahun";
+            })
+            ->rawColumns(['action', 'nama_instruktur', 'dudi'])
             ->make(true);
     }
 
@@ -53,7 +79,7 @@ class NilaiQuisionerController extends Controller
             'tanggal' => 'required|date',
             'id_instruktur' => 'required|exists:instruktur,id_instruktur',
             'quesioner' => 'required|array',
-            'quesioner.*' => 'required|string|max:1000',
+            'quesioner.*' => 'required|string|max:255',
         ]);
 
         // Lakukan penyimpanan untuk setiap quesioner
@@ -123,11 +149,52 @@ class NilaiQuisionerController extends Controller
         ]);
     }
 
+    public function view(Request $request)
+    {
+        // Mencari data NilaiQuesioner berdasarkan id_instruktur dan id_ta
+        $nilaiRecords = NilaiQuesioner::with(['instruktur', 'quesioner'])
+            ->where('id_instruktur', $request->id_instruktur)
+            ->whereHas('quesioner', function ($query) use ($request) {
+                $query->where('id_ta', $request->id_ta);
+            })
+            ->where('nilai_quesioner.is_active', true)
+            ->get();
+
+        // Cek jika data tidak ditemukan
+        if ($nilaiRecords->isEmpty()) {
+            return response()->json(['status' => 'error', 'message' => 'Data tidak ditemukan'], 404);
+        }
+
+        // Mengambil semua quesioner terkait dan nilainya dari NilaiQuesioner
+        $quesionerData = $nilaiRecords->map(function ($nilai) {
+            return [
+                'id_nilai' => $nilai->id_nilai,
+                'id_quesioner' => $nilai->quesioner->id_quesioner,
+                'soal' => $nilai->quesioner->soal,
+                'nilai' => $nilai->nilai,  // Mengambil nilai langsung dari tabel NilaiQuesioner
+            ];
+        });
+
+        // Mengambil data instruktur dan tanggal dari satu record
+        $firstRecord = $nilaiRecords->first();
+
+        // Mengembalikan response dalam format JSON
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'tanggal' => $firstRecord->tanggal,
+                'id_instruktur' => $firstRecord->id_instruktur,
+                'nama_instruktur' => $firstRecord->instruktur->nama,
+                'quesioner' => $quesionerData,
+            ]
+        ]);
+    }
+
     // Delete a record
     public function destroy(Request $request)
     {
         // Mengupdate is_active menjadi false untuk semua record yang ditemukan
-        NilaiQuesioner::where('nis', $request->nis)
+        NilaiQuesioner::where('id_instruktur', $request->id_instruktur)
             ->whereHas('quesioner', function ($query) use ($request) {
                 $query->where('id_ta', $request->id_ta);
             })

@@ -1,14 +1,14 @@
 @extends('layouts.main')
 @section('title')
-    Nilai Quesioner
+    Nilai Kuesioner
 @endsection
 @section('pagetitle')
     <div class="pagetitle">
-        <h1>Nilai Quesioner</h1>
+        <h1>Nilai Kuesioner</h1>
         <nav>
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">PKL</li>
-                <li class="breadcrumb-item active">Nilai Quesioner</li>
+                <li class="breadcrumb-item active">Nilai Kuesioner</li>
             </ol>
         </nav>
     </div><!-- End Page Title -->
@@ -18,22 +18,36 @@
     <div class="card">
         <div class="card-header">
             <div class="d-flex justify-content-between">
-                <h5>Data Nilai Quesioner</h5>
+                <h5>Data Nilai Kuesioner</h5>
                 <div>
-                    <button class="btn btn-primary btn-sm" id="btnAdd"><i class="bi bi-plus-square"></i> Tambah</button>
+                    <button class="btn btn-primary btn-sm" id="btnAdd"><i class="bi bi-plus-circle"></i> Tambah</button>
                     <button class="btn btn-danger btn-sm" id="btnDownload"><i class="bi bi-download"></i> Download</button>
                 </div>
             </div>
         </div>
         <div class="card-body">
+            <div class="mb-3">
+                <label for="id_ta1" class="form-label">Tahun Akademik</label>
+                <select class="form-select" id="id_ta1" name="id_ta1" required>
+                    <option value="">Pilih</option>
+                    @foreach ($thnAkademik as $item)
+                        @if ($item->id_ta == $aktifAkademik->id_ta)
+                            <option value="{{ $item->id_ta }}" selected>{{ $item->tahun_akademik }} (aktif)</option>
+                        @else
+                            <option value="{{ $item->id_ta }}">{{ $item->tahun_akademik }}</option>
+                        @endif
+                    @endforeach
+                </select>
+                <div class="invalid-feedback"> Tahun Akademik wajib dipilih. </div>
+            </div>
             <div class="table-responsive">
                 <table class="table table-striped table-sm" id="myTable">
                     <thead>
                         <tr>
                             <th>Instruktur</th>
+                            <th>DUDI</th>
                             <th>Tahun Akademik</th>
-                            <th>Siswa</th>
-                            <th>Rata-rata Nilai</th>
+                            <th>Tanggal Pengisian</th>
                             <th>#</th>
                         </tr>
                     </thead>
@@ -62,24 +76,23 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="nis" class="form-label">Siswa</label>
-                            <select class="form-select" id="nis" name="nis" style="width: 100%;"
+                            <label for="id_instruktur" class="form-label">Instruktur</label>
+                            <select class="form-select" id="id_instruktur" name="id_instruktur" style="width: 100%;"
                                 required>
                             </select>
-                            <div class="invalid-feedback"> Siswa wajib dipilih. </div>
+                            <div class="invalid-feedback"> Instruktur wajib dipilih. </div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Quesioner</label>
-                            <table class="table table-bordered">
+                            <table class="table table-bordered" id="table">
                                 <thead>
                                     <tr>
                                         <th>Quesioner</th>
-                                        <th>Ya</th>
-                                        <th>Tidak</th>
+                                        <th>Nilai</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="tbody2">
                                     @foreach ($questions as $question)
                                         <tr>
                                             <td>
@@ -87,12 +100,7 @@
                                                 <input type="hidden" name="id_nilai[{{ $question->id_quesioner }}]" value="">
                                             </td>
                                             <td>
-                                                <input type="radio" name="quesioner[{{ $question->id_quesioner }}]"
-                                                    value="1" required>
-                                            </td>
-                                            <td>
-                                                <input type="radio" name="quesioner[{{ $question->id_quesioner }}]"
-                                                    value="0">
+                                                <input type="text" class="form-control" name="quesioner[{{ $question->id_quesioner }}]" placeholder="Masukkan nilai" required>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -217,7 +225,11 @@
                 serverSide: true,
                 ajax: {
                     url: "{{ route('nilai-quesioner.data') }}",
-                    type: 'POST',
+                    type: 'GET',
+                    data: function(d) {
+                        d.id_ta = $('#id_ta1').val();
+                        return d;
+                    }
                 },
                 columns: [{
                         data: 'nama_instruktur',
@@ -226,7 +238,7 @@
                     {
                         data: 'dudi',
                         name: 'dudi'
-                    }
+                    },
                     {
                         data: 'tahun_akademik',
                         name: 'tahun_akademik'
@@ -244,45 +256,120 @@
                 ]
             });
 
-            $('#btnAdd').click(function() {
-                $('#myForm')[0].reset();
-                $('#stt').val('0');
-                $('#modalTitle').text('Tambah Nilai Quesioner');
-                $('#myModal').modal('show');
+            $('#id_ta1').on('change', function() {
+                var selectedIdTa = $(this).val();
+
+                // Update questions based on selected id_ta
+                $.ajax({
+                    url: "{{ route('nilai-quesioner.questions') }}",
+                    method: 'GET',
+                    data: { id_ta: selectedIdTa },
+                    success: function(response) {
+                        // Clear existing questions using id
+                        $('#tbody2').empty();
+
+                        // Add new questions
+                        response.forEach(function(question) {
+                            var newRow = `
+                                <tr>
+                                    <td>
+                                        ${question.soal}
+                                        <input type="hidden" name="id_nilai[${question.id_quesioner}]" value="">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control" name="quesioner[${question.id_quesioner}]" placeholder="Masukkan nilai" required>
+                                    </td>
+                                </tr>
+                            `;
+                            $('#tbody2').append(newRow);
+                        });
+                    },
+                    error: function() {
+                        console.error('Error loading questions');
+                    }
+                });
+
+                table.ajax.reload();
             });
 
-            // Event click untuk tombol edit
-            $('#myTable').on('click', '.btn-edit', function() {
-                var data = table.row($(this).closest('tr')).data();
-                var nis = data.nis;
-                var id_ta = data.id_ta;
+            // Reset form when modal is hidden
+            $('#myModal').on('hidden.bs.modal', function() {
+                $('#myForm')[0].reset();
+                $('#tanggal').prop('disabled', false);
+                $('#id_instruktur').prop('disabled', false);
+                $('input[name^="quesioner"]').prop('disabled', false);
+                $('button[type="submit"]').show();
+                $('#id_instruktur').empty();
+            });
+
+            // Event click untuk tombol lihat
+            $('#myTable').on('click', '.btn-lihat', function() {
+                var id_instruktur = $(this).data('id');
+                var id_ta = $('#id_ta1').val(); // Menggunakan id_ta yang sedang dipilih
 
                 $.ajax({
-                    url: `/nilai-quesioner/edit/${nis}/${id_ta}`,
+                    url: `/nilai-quesioner/view/${id_instruktur}/${id_ta}`,
                     method: 'GET',
                     success: function(response) {
                         if (response.status === 'success') {
                             var data = response.data;
 
-                            $('#stt').val('1');
-                            $('#tanggal').val(data.tanggal);
+                            // Load questions based on id_ta
+                            $.ajax({
+                                url: "{{ route('nilai-quesioner.questions') }}",
+                                method: 'GET',
+                                data: { id_ta: id_ta },
+                                success: function(questionsResponse) {
+                                    // Clear existing questions
+                                    $('#tbody2').empty();
 
-                            // Set siswa
-                            var newOptionSiswa = new Option(data.nis + ' - ' +
-                                data.nama_siswa, data.nis, true, true);
-                            $('#nis').append(newOptionSiswa).trigger('change');
+                                    // Add new questions
+                                    questionsResponse.forEach(function(question) {
+                                        var newRow = `
+                                            <tr>
+                                                <td>
+                                                    ${question.soal}
+                                                    <input type="hidden" name="id_nilai[${question.id_quesioner}]" value="">
+                                                </td>
+                                                <td>
+                                                    <input type="text" class="form-control" name="quesioner[${question.id_quesioner}]" placeholder="Masukkan nilai" required>
+                                                </td>
+                                            </tr>
+                                        `;
+                                        $('#tbody2').append(newRow);
+                                    });
 
-                            // Clear previous selections for radio buttons
-                            $('input[name^="quesioner"]').prop('checked', false);
+                                    // Set modal title
+                                    $('#modalTitle').text('Lihat Hasil Kuesioner - ' + data.nama_instruktur);
 
-                            // Set quesioner values based on response
-                            data.quesioner.forEach(function(question) {
-                                $(`input[name="quesioner[${question.id_quesioner}]"][value="${question.nilai}"]`)
-                                    .prop('checked', true);
-                                $(`input[name="id_nilai[${question.id_quesioner}]"]`).val(question.id_nilai);
+                                    // Set tanggal
+                                    $('#tanggal').val(data.tanggal);
+
+                                    // Set instruktur
+                                    var newOptionInstruktur = new Option(data.nama_instruktur, data.id_instruktur, true, true);
+                                    $('#id_instruktur').append(newOptionInstruktur).trigger('change');
+
+                                    // Clear previous selections for questionnaire inputs
+                                    $('input[name^="quesioner"]').val('');
+
+                                    // Set quesioner values based on response
+                                    data.quesioner.forEach(function(question) {
+                                        $(`input[name="quesioner[${question.id_quesioner}]"]`).val(question.nilai);
+                                        $(`input[name="id_nilai[${question.id_quesioner}]"]`).val(question.id_nilai);
+                                    });
+
+                                    // Disable form inputs for view mode
+                                    $('#tanggal').prop('disabled', true);
+                                    $('#id_instruktur').prop('disabled', true);
+                                    $('input[name^="quesioner"]').prop('disabled', true);
+                                    $('button[type="submit"]').hide();
+
+                                    $('#myModal').modal('show');
+                                },
+                                error: function() {
+                                    console.error('Error loading questions for view');
+                                }
                             });
-
-                            $('#myModal').modal('show');
                         } else {
                             alert('Data tidak ditemukan.');
                         }
@@ -297,9 +384,8 @@
 
             // Event click untuk tombol hapus
             $('#myTable').on('click', '.btn-delete', function() {
-                var data = table.row($(this).closest('tr')).data();
-                var nis = data.nis;
-                var id_ta = data.id_ta;
+                var id_instruktur = $(this).data('id');
+                var id_ta = $('#id_ta1').val(); // Menggunakan id_ta yang sedang dipilih
 
                 Swal.fire({
                     title: "Apakah anda yakin?",
@@ -312,7 +398,7 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({
-                            url: `/nilai-quesioner/delete/${nis}/${id_ta}`,
+                            url: `/nilai-quesioner/delete/${id_instruktur}/${id_ta}`,
                             method: "GET",
                             success: function(response) {
                                 if (response.status) {
@@ -380,12 +466,12 @@
         });
 
         $(document).ready(function() {
-            $('#nis').select2({
+            $('#id_instruktur').select2({
                 dropdownParent: $("#myModal"),
-                placeholder: 'Cari Siswa ID/Nama...',
+                placeholder: 'Cari Instruktur ID/Nama...',
                 minimumInputLength: 1,
                 ajax: {
-                    url: "{{ route('siswa.search') }}",
+                    url: "{{ route('instruktur.search') }}",
                     dataType: 'json',
                     delay: 250,
                     data: function(params) {
@@ -397,8 +483,8 @@
                         return {
                             results: $.map(data, function(item) {
                                 return {
-                                    id: item.nis,
-                                    text: item.nis + ' - ' + item.nama
+                                    id: item.id_instruktur,
+                                    text: item.id_instruktur + ' - ' + item.nama + ' (' + (item.nama_dudi || 'N/A') + ')'
                                 }
                             })
                         };

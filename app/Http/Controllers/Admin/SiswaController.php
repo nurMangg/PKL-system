@@ -280,6 +280,9 @@ class SiswaController extends Controller
             ->addColumn('nama_siswa', function ($dt) {
                 return '<a href="' . url("/d/siswa?nis=" . $dt->nis) . '">' . $dt->nama . '</a>';
             })
+            ->addColumn('jurusan', function ($dt) {
+                return $dt->jurusan->jurusan ?? '-';
+            })
             ->addColumn('action', function ($dt) {
                 $editUrl = route('siswa.edit', $dt->nis);
                 $deleteUrl = route('siswa.destroy', $dt->nis); // Route untuk delete
@@ -292,7 +295,7 @@ class SiswaController extends Controller
                         ' . method_field('DELETE') . '
                     </form>';
             })
-            ->rawColumns(['action', 'nama_siswa'])
+            ->rawColumns(['action', 'nama_siswa', 'jurusan'])
             ->make(true);
     }
 
@@ -325,6 +328,7 @@ class SiswaController extends Controller
     {
         $search = $request->input('q'); // Nilai pencarian dari input Select2
         $key = $request->input('k');
+        $id_ta = $request->input('id_ta'); // Ambil parameter id_ta
 
         // Query dasar untuk siswa yang aktif
         $siswaQuery = Siswa::with('penempatan')->where('is_active', true)
@@ -333,12 +337,12 @@ class SiswaController extends Controller
                     ->orWhere('nis', 'LIKE', "%{$search}%");
             });
 
-        // Jika $k == 'presensi', cari siswa yang ada di penempatan
-        // if ($key === 'presensi') {
-        //     $siswaQuery = $siswaQuery->whereHas('penempatan', function ($query) {
-        //         $query->where('is_active', true); // Contoh: hanya ambil penempatan dengan status "active"
-        //     });
-        // }
+        // Filter berdasarkan tahun akademik jika ada
+        if ($id_ta && $key === 'penempatan') {
+            $siswaQuery = $siswaQuery->whereHas('penempatan', function ($query) use ($id_ta) {
+                $query->where('id_ta', $id_ta);
+            });
+        }
 
         // Tambahkan kondisi berdasarkan role user
         if (Auth::user()->role == 2) {
@@ -374,11 +378,24 @@ class SiswaController extends Controller
                 'status' => true,
                 'message' => 'Data berhasil diupload dan diproses.',
             ]);
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            // Handle validation errors
+            $failures = $e->failures();
+            $errors = [];
+
+            foreach ($failures as $failure) {
+                $errors[] = 'Baris ' . $failure->row() . ': ' . implode(', ', $failure->errors());
+            }
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Validasi data gagal: ' . implode('; ', $errors),
+            ]);
         } catch (\Exception $e) {
             Log::error('Error uploading Excel file: ' . $e->getMessage());
             return response()->json([
                 'status' => false,
-                'message' => 'Terjadi kesalahan saat mengupload file.' . $e->getMessage(),
+                'message' => 'Terjadi kesalahan saat mengupload file: ' . $e->getMessage(),
             ]);
         }
     }

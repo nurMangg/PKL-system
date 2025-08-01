@@ -79,10 +79,12 @@ Route::group(['middleware' => ['auth']], function () {
     // PKL NilaiQuisioner
     Route::group(['middleware' => [RoleMiddleware::class . ':1,2'], 'prefix' => 'nilai-quesioner', 'controller' => NilaiQuisionerController::class], function () {
         Route::get('/', 'index')->name('nilai-quesioner');
-        Route::post('/data', 'data')->name('nilai-quesioner.data');
+        Route::get('/data', 'data')->name('nilai-quesioner.data');
+        Route::get('/questions', 'getQuestions')->name('nilai-quesioner.questions');
+        Route::get('/view/{id_instruktur}/{id_ta}', 'view')->name('nilai-quesioner.view');
         Route::get('/edit/{nis}/{id_ta}', 'edit')->name('nilai-quesioner.edit');
         Route::post('/upsert', 'upsert')->name('nilai-quesioner.upsert');
-        Route::get('/delete/{nis}/{id_ta}', 'destroy')->name('nilai-quesioner.delete');
+        Route::get('/delete/{id_instruktur}/{id_ta}', 'destroy')->name('nilai-quesioner.delete');
         Route::get('/downloadExcel', 'downloadExcel')->name('nilai-quesioner.downloadExcel');
     });
 

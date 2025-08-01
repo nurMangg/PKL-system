@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Siswa;
 use App\Models\Dudi;
 use App\Models\Penempatan;
+use App\Models\ThnAkademik;
 use Illuminate\Http\Request;
 use App\Models\Pengajuan;
+
 use App\Models\PengajuanDetail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +21,12 @@ use Illuminate\Support\Facades\Validator;
 class PengajuanSuratController extends Controller
 {
     public function index(){
-        return view('pkl.pengajuan-surat.index');
+
+        $aktifAkademik = getActiveAcademicYear();
+        $thnAkademik = ThnAkademik::where('is_active', true)->orderBy('tahun_akademik', 'desc')->get();
+        $tahunAkademikExcel = $thnAkademik;
+        $masterExcel = asset('assets/excel/master-pengajuan-surat.xlsx');
+        return view('pkl.pengajuan-surat.index', compact('thnAkademik', 'aktifAkademik','tahunAkademikExcel','masterExcel'));
     }
 
     public function store(Request $request)
@@ -53,7 +60,7 @@ class PengajuanSuratController extends Controller
     foreach ($request->namaSiswa as $nama) {
        PengajuanDetail::create([
             'id_surat' => $pengajuan->id,
-            'nim' => $nama,
+            'nis' => $nama,
             'jurusan' => Siswa::where('nis', $nama)->first()->jurusan->jurusan
        ]);
     };
@@ -83,7 +90,7 @@ public function search(Request $request)
     {
         if ($request->ajax()) {
             $siswa = Siswa::where('nis', Auth::user()->username)->first();
-            $pengajuanSurat = PengajuanDetail::where('nim', Auth::user()->username)->orderByDesc('id')->get(); // Ambil data dari model
+            $pengajuanSurat = PengajuanDetail::where('nis', Auth::user()->username)->orderByDesc('id')->get(); // Ambil data dari model
             return DataTables::of($pengajuanSurat)
                 ->addIndexColumn() // Tambahkan nomor urut
                 ->editColumn('status', function ($row) {
@@ -103,7 +110,7 @@ public function search(Request $request)
                     return Dudi::where('id_dudi', $row->pengajuan->perusahaan_tujuan)->first()->nama;
                 })
                 ->addColumn('namasiswa', function ($row) {
-                    return optional(Siswa::where('nis', $row->nim)->first())->nama;
+                    return optional(Siswa::where('nis', $row->nis)->first())->nama;
                 })
                 ->editColumn('tanggal_pengajuan', function ($row) {
                     return Pengajuan::where('id', $row->id_surat)->first()->tanggal_pengajuan;
@@ -209,7 +216,7 @@ public function search(Request $request)
 
             foreach ($detailSiswa as $detail) {
                 Penempatan::create([
-                    'nis' => $detail->nim,
+                    'nis' => $detail->nis,
                     'id_ta' => $pengajuan->id_ta,
                     'id_guru' => $request->guru,
                     'kelompok' => $kelompokTerakhir + 1,
@@ -242,7 +249,7 @@ public function search(Request $request)
         ]);
 
         // Ambil semua pengajuan detail untuk siswa ini
-        $pengajuanDetails = PengajuanDetail::where('nim', $request->nisSiswa)->get();
+        $pengajuanDetails = PengajuanDetail::where('nis', $request->nisSiswa)->get();
 
         if ($pengajuanDetails->isEmpty()) {
             return response()->json([
@@ -329,65 +336,80 @@ public function search(Request $request)
 
     // admin
     public function getDataAll(Request $request)
-{
-    if ($request->ajax()) {
-        $pengajuanSurat = Pengajuan::all();
-        // dd($pengajuanSurat);
-        return DataTables::of($pengajuanSurat)
-            ->addIndexColumn()
-            ->editColumn('status', function ($row) {
-                if ($row->status === 'Disetujui') {
-                    return '<span class="badge bg-primary">Disetujui</span>';
-                } else if ($row->status === 'Diterima') {
-                    return '<span class="badge bg-secondary">Diterima</span>';
-                } else if ($row->status === 'Ditolak') {
-                    return '<span class="badge bg-danger">Ditolak</span>';
-                } else if ($row->status === 'Ditempatkan') {
-                    return '<span class="badge bg-success">Ditempatkan</span>';
-                } else {
-                    return '<span class="badge bg-warning">Menunggu</span>';
-                }
-            })
-            ->addColumn('namasiswa', function ($row) {
-                return optional(Siswa::where('nis', $row->nim)->first())->nama;
-            })
-            ->editColumn('perusahaan_tujuan', function($row) {
-                $dt = Dudi::where('id_dudi', $row->perusahaan_tujuan)->first();
-                return '<a href="' . url("/d/dudi?id=" . $dt->id_dudi) . '">' . $dt->nama . '</a>';
-            })
-            ->addColumn('aksi', function ($row) {
-                $actionButtons = '
-                <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-sm btn-primary detail-btn" data-id="' . $row->id . '">Detail</button>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Action
-                        </button>
-                        <ul class="dropdown-menu">';
+    {
+        if ($request->ajax()) {
+            $pengajuanSurat = Pengajuan::query();
 
-                // Hanya tampilkan tombol "Disetujui" jika status bukan "Ditempatkan"
-                if ($row->status !== 'Diterima' && $row->status !== 'Ditempatkan') {
-                    $actionButtons .= '<li><button class="dropdown-item approve-btn" data-id="' . $row->id . '">Disetujui</button></li>';
-                }
+            // Filter berdasarkan tahun akademik jika ada
+            if ($request->has('id_ta') && !empty($request->id_ta)) {
+                $pengajuanSurat = $pengajuanSurat->where('id_ta', $request->id_ta);
+            }
 
-                if ($row->status === 'Diterima') {
-                    $actionButtons .= '<li><button class="dropdown-item ditempatkan-btn" data-id="' . $row->id . '">Tempatkan</button></li>';
-                }
+            // Filter berdasarkan role user
+            if (Auth::user()->role == 2) {
+                // Untuk role 2, filter berdasarkan jurusan yang ada di session
+                $pengajuanSurat = $pengajuanSurat->whereHas('pengajuanDetail.siswa', function ($query) {
+                    $query->where('id_jurusan', session('id_jurusan'));
+                });
+            }
 
-                $actionButtons .= '
-                            <li><button class="dropdown-item reject-btn" data-id="' . $row->id . '">Ditolak</button></li>
-                            <li><a class="dropdown-item" href="/surat/' . $row->id . '">Lihat</a></li>
-                        </ul>
+            return DataTables::of($pengajuanSurat)
+                ->addIndexColumn()
+                ->editColumn('status', function ($row) {
+                    if ($row->status === 'Disetujui') {
+                        return '<span class="badge bg-primary">Disetujui</span>';
+                    } else if ($row->status === 'Diterima') {
+                        return '<span class="badge bg-secondary">Diterima</span>';
+                    } else if ($row->status === 'Ditolak') {
+                        return '<span class="badge bg-danger">Ditolak</span>';
+                    } else if ($row->status === 'Ditempatkan') {
+                        return '<span class="badge bg-success">Ditempatkan</span>';
+                    } else {
+                        return '<span class="badge bg-warning">Menunggu</span>';
+                    }
+                })
+                ->editColumn('perusahaan_tujuan', function($row) {
+                    $dt = Dudi::where('id_dudi', $row->perusahaan_tujuan)->first();
+                    if ($dt) {
+                        return '<a href="' . url("/d/dudi?id=" . $dt->id_dudi) . '">' . $dt->nama . '</a>';
+                    }
+                    return '-';
+                })
+                ->addColumn('aksi', function ($row) {
+                    $actionButtons = '
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-primary detail-btn" data-id="' . $row->id . '">Detail</button>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Action
+                            </button>
+                            <ul class="dropdown-menu">';
+
+                    // Hanya tampilkan tombol "Disetujui" jika status bukan "Ditempatkan"
+                    if ($row->status !== 'Diterima' && $row->status !== 'Ditempatkan') {
+                        $actionButtons .= '<li><button class="dropdown-item approve-btn" data-id="' . $row->id . '">Disetujui</button></li>';
+                    }
+
+                    if ($row->status === 'Diterima') {
+                        $actionButtons .= '<li><button class="dropdown-item ditempatkan-btn" data-id="' . $row->id . '">Tempatkan</button></li>';
+                    }
+
+                    $actionButtons .= '
+                                <li><button class="dropdown-item reject-btn" data-id="' . $row->id . '">Ditolak</button></li>
+                                <li><a class="dropdown-item" href="/surat/' . $row->id . '">Lihat</a></li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-sm btn-danger delete-btn" data-id="' . $row->id . '">Hapus</button>
                     </div>
-                    <button class="btn btn-sm btn-danger delete-btn" data-id="' . $row->id . '">Hapus</button>
-                </div>
-                ';
-                return $actionButtons;
-            })
-            ->rawColumns(['status', 'aksi', 'perusahaan_tujuan'])
-            ->make(true);
+                    ';
+                    return $actionButtons;
+                })
+                ->rawColumns(['status', 'aksi', 'perusahaan_tujuan'])
+                ->make(true);
+        }
     }
-}
+
+
 public function reject(Request $request, $id)
 {
     $request->validate([

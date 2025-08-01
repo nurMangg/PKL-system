@@ -119,16 +119,16 @@ class InstrukturController extends Controller
 
         // Jika validasi gagal
         if ($validator->fails()) {
-            
+
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Validasi gagal',
                     'errors' => $validator->errors()
                 ], 422);
-            
+
         }
 
-            
+
 
         // Jalankan transaksi database
         DB::beginTransaction();
@@ -351,11 +351,24 @@ class InstrukturController extends Controller
                 'status' => true,
                 'message' => 'Data berhasil diupload dan diproses.',
             ]);
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            // Handle validation errors
+            $failures = $e->failures();
+            $errors = [];
+
+            foreach ($failures as $failure) {
+                $errors[] = 'Baris ' . $failure->row() . ': ' . implode(', ', $failure->errors());
+            }
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Validasi data gagal: ' . implode('; ', $errors),
+            ]);
         } catch (\Exception $e) {
             Log::error('Error uploading Excel file: ' . $e->getMessage());
             return response()->json([
                 'status' => false,
-                'message' => 'Terjadi kesalahan saat mengupload file.',
+                'message' => 'Terjadi kesalahan saat mengupload file: ' . $e->getMessage(),
             ]);
         }
     }

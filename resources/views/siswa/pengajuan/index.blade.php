@@ -19,7 +19,7 @@
         @foreach ($pengajuan as $key => $item)
         <tr>
             <td>{{ $key + 1 }}</td>
-            <td>{{ $item->nim }}</td>
+            <td>{{ $item->nis }}</td>
             <td>{{ $item->kelas }}</td>
             <td>{{ $item->perusahaan_tujuan }}</td>
             <td>{{ $item->tanggal_pengajuan }}</td>

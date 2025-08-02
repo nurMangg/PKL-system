@@ -10,7 +10,7 @@ class PengajuanDetail extends Model
     use HasFactory;
 
     protected $table = 'pengajuansurat_detail';
-    protected $fillable = ['id_surat', 'nim', 'jurusan'];
+    protected $fillable = ['id_surat', 'nis', 'jurusan'];
 
     public function pengajuan()
     {
@@ -19,8 +19,13 @@ class PengajuanDetail extends Model
 
     public function siswa()
     {
-        return $this->belongsTo(Siswa::class, 'nim', 'nis');
+        return $this->belongsTo(Siswa::class, 'nis', 'nis');
     }
 
-    
+    public function jurusann()
+    {
+        return $this->belongsTo(Jurusan::class, 'jurusan', 'id_jurusan');
+    }
+
+
 }

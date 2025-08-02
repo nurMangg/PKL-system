@@ -103,7 +103,7 @@ Route::group(['middleware' => ['auth']], function () {
 
     });
 
-    Route::group(['middleware' => [RoleMiddleware::class . ':1,5,4'], 'prefix' => 'siswa'], function () {
+    Route::group(['middleware' => [RoleMiddleware::class . ':1,5,4,2'], 'prefix' => 'siswa'], function () {
         Route::get('/search/perusahaan', [SearchController::class, 'searchPerusahaan'])->name('siswa.perusahaan.search');
         Route::post('/perusahaan/store', [DudiController::class, 'storeInput'])->name('siswa.dudi.store');
         Route::post('/siswa/isDitolak', [PengajuanSuratController::class, 'isDitolak'])->name('siswa.pengajuan.isDitolak');
@@ -134,7 +134,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('penilaian/{id_siswa}/edit', [PenilaianController::class, 'edit'])->name('penilaian.edit');
         Route::put('penilaian/{id_siswa}', [PenilaianController::class, 'update'])->name('penilaian.update');
         Route::delete('penilaian/{id_siswa}', [PenilaianController::class, 'destroy'])->name('penilaian.destroy');
-        Route::get('penilaian/{id_siswa}/print', [PenilaianController::class, 'print'])->name('penilaian.print');
+        Route::get('penilaian/{id_siswa}/{id_ta}/{kelompok}/print', [PenilaianController::class, 'print'])->name('penilaian.print');
         Route::get('penilaian/dashboard', [PenilaianController::class, 'dashboard'])->name('penilaian.dashboard');
     });
 

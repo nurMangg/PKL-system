@@ -362,7 +362,11 @@ class ProfilInstrukturController extends Controller
                     <a href="' . route('penilaian.edit', $dt->siswa->nis) . '" class="btn btn-warning btn-sm">
                         <i class="bi bi-pencil"></i> Edit
                     </a>
-                    <a href="' . route('penilaian.print', $dt->siswa->nis) . '" class="btn btn-secondary btn-sm" target="_blank">
+                    <a href="' . route('penilaian.print', [
+                        'id_siswa' => $dt->siswa->nis,
+                        'id_ta' => $dt->id_ta,
+                        'kelompok' => $dt->kelompok
+                    ]) . '" class="btn btn-secondary btn-sm" target="_blank">
                         <i class="bi bi-printer"></i> Cetak
                     </a>
                 ';

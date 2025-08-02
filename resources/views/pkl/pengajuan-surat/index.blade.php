@@ -224,6 +224,13 @@
     <script src="{{ asset('assets') }}/vendor/dataTables/dataTables.bootstrap5.js"></script>
     <script src="{{ asset('assets') }}/vendor/select2/js/select2.min.js"></script>
     <script>
+        // Setup CSRF token for all AJAX requests
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+
         $(document).ready(function() {
             for (let i = 1; i <= 4; i++) {
                 $(`#nis${i}`).select2({
@@ -387,6 +394,11 @@
             var btn = form.find('button[type="submit"]');
             btn.prop('disabled', true).text('Menyimpan...');
 
+            // Debug: log the form data
+            console.log('Form data:', form.serialize());
+            console.log('ID:', $('#guruId').val());
+            console.log('Guru:', $('#guru').val());
+
             Swal.fire({
                 title: 'Konfirmasi',
                 text: 'Apakah Benar Data ini akan ditempatkan sekarang?',
@@ -402,6 +414,7 @@
                         data: form.serialize(),
                         success: function(res) {
                             btn.prop('disabled', false).text('Simpan');
+                            console.log('Response:', res);
                             if (res.status || res.success) {
                                 Swal.fire({
                                     icon: 'success',
@@ -416,6 +429,7 @@
                                     }
                                 });
                             } else {
+                                console.log(res);
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'Gagal',
@@ -425,6 +439,7 @@
                         },
                         error: function(xhr) {
                             btn.prop('disabled', false).text('Simpan');
+                            console.log('Error response:', xhr.responseJSON);
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Gagal',

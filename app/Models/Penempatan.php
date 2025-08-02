@@ -20,6 +20,8 @@ class Penempatan extends Model
         'id_instruktur',
         'kelompok',
         'projectpkl',
+        'tanggal_mulai',
+        'tanggal_selesai',
         'is_active',
         'created_at',
         'created_by',

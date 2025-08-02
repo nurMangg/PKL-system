@@ -18,12 +18,24 @@ class RoleMiddleware
     {
         // Pastikan user sudah login
         if (!Auth::check()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'You must be logged in to access this resource.'
+                ], 401);
+            }
             return redirect('/login')->withErrors('You must be logged in to access this page.');
         }
 
         // Cek apakah level user yang sedang login termasuk dalam level yang diizinkan
         if (!in_array(Auth::user()->role, $roles)) {
-            return redirect('/error_page')->withErrors('You do not have access to this section.');
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'You do not have access to this resource.'
+                ], 403);
+            }
+            return redirect('/dashboard')->withErrors('You do not have access to this section.');
         }
 
         return $next($request);

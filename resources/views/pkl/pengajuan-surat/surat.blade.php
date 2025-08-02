@@ -196,7 +196,7 @@
                 <tr>
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $student->nama }}</td>
-                    <td>{{ $student->jurusan }}</td>
+                    <td>{{ $student->jurusann->jurusan . ' (' . $student->jurusan . ')' }}</td>
                 </tr>
                 @endforeach
             </tbody>

@@ -694,7 +694,7 @@
 
     {{-- Modal Surat --}}
     <div class="modal fade" id="suratModal" tabindex="-1" aria-labelledby="suratModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="suratModalLabel">Surat Persetujuan</h5>
@@ -1624,7 +1624,7 @@
             });
         </script>
 
-        
+
         <script>
             const editModal = document.getElementById('editModal');
             if (editModal) editModal.addEventListener('show.bs.modal', function(event) {
@@ -1987,7 +1987,7 @@
                             return `
                         <tr>
                             <td>${index + 1}</td>
-                            <td>${siswa.nim}</td>
+                            <td>${siswa.nis}</td>
                             <td>${siswa.nama}</td>
                             <td>${siswa.kelas}</td>
                             <td>${siswa.jurusan}</td>
@@ -2001,7 +2001,7 @@
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>NIM</th>
+                                <th>NIS</th>
                                 <th>Nama</th>
                                 <th>Kelas</th>
                                 <th>Jurusan</th>

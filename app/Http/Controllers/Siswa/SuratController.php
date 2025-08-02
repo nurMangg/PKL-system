@@ -21,7 +21,7 @@ class SuratController extends Controller
         $surat->tanggal_selesai = Carbon::parse($surat->tanggal_selesai)->locale('id_ID')->translatedFormat('d F Y');
 
         $siswa->map(function ($item) {
-            $item->nama = Siswa::where('nis', $item->nim)->first()->nama;
+            $item->nama = Siswa::where('nis', $item->nis)->first()->nama;
         });
 
 

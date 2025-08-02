@@ -61,7 +61,7 @@ class PengajuanSuratController extends Controller
        PengajuanDetail::create([
             'id_surat' => $pengajuan->id,
             'nis' => $nama,
-            'jurusan' => Siswa::where('nis', $nama)->first()->jurusan->jurusan
+            'jurusan' => Siswa::where('nis', $nama)->first()->jurusan->id_jurusan
        ]);
     };
 
@@ -191,6 +191,11 @@ public function search(Request $request)
 
     public function diTempatkan(Request $request)
     {
+        \Log::info('diTempatkan called with data: ' . json_encode($request->all()));
+        \Log::info('User role: ' . Auth::user()->role);
+        \Log::info('User ID: ' . Auth::id());
+        \Log::info('User name: ' . Auth::user()->username);
+
         $validated = $request->validate([
             'id' => 'required|integer',
             'guru' => 'required|integer',
@@ -200,12 +205,18 @@ public function search(Request $request)
         try {
             // Ambil data pengajuan
             $pengajuan = Pengajuan::findOrFail($request->id);
+            \Log::info('Pengajuan found: ' . json_encode($pengajuan->toArray()));
 
             // Update status menjadi Ditempatkan
             $pengajuan->update(['status' => 'Ditempatkan']);
 
             // Ambil semua siswa yang mengajukan (detail)
             $detailSiswa = PengajuanDetail::where('id_surat', $pengajuan->id)->get();
+            \Log::info('Detail siswa found: ' . $detailSiswa->count() . ' records');
+
+            if ($detailSiswa->isEmpty()) {
+                throw new \Exception('Tidak ada detail siswa yang ditemukan');
+            }
 
             // Cari data kelompok terakhir di penempatan
             $penempatanTerakhir = Penempatan::where('id_ta', $pengajuan->id_ta)
@@ -213,22 +224,30 @@ public function search(Request $request)
                 ->first();
 
             $kelompokTerakhir = $penempatanTerakhir ? $penempatanTerakhir->kelompok : 0;
+            $kelompokBaru = $kelompokTerakhir + 1;
+
+            \Log::info('Kelompok baru: ' . $kelompokBaru);
 
             foreach ($detailSiswa as $detail) {
-                Penempatan::create([
+                $penempatanData = [
                     'nis' => $detail->nis,
                     'id_ta' => $pengajuan->id_ta,
                     'id_guru' => $request->guru,
-                    'kelompok' => $kelompokTerakhir + 1,
-                    'id_instruktur' => $pengajuan->id_instrukturId,
+                    'kelompok' => $kelompokBaru,
+                    'id_instruktur' => $pengajuan->id_instrukturId, // Use correct field name
                     'created_by' => Auth::id(),
                     'is_active' => 1,
                     'tanggal_mulai' => $pengajuan->tanggal_mulai,
                     'tanggal_selesai' => $pengajuan->tanggal_selesai,
-                ]);
+                ];
+
+                \Log::info('Creating penempatan with data: ' . json_encode($penempatanData));
+
+                Penempatan::create($penempatanData);
             }
 
             DB::commit();
+            \Log::info('Penempatan completed successfully');
 
             return response()->json([
                 'status' => true,
@@ -236,6 +255,9 @@ public function search(Request $request)
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('Error in diTempatkan: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+
             return response()->json([
                 'status' => false,
                 'message' => 'Gagal menempatkan: ' . $e->getMessage(),
@@ -462,10 +484,10 @@ public function details($id)
 
     $siswa = $pengajuan->map(function ($item) {
         return [
-            'nim' => $item->siswa->nis ?? null,
+            'nis' => $item->siswa->nis ?? null,
             'nama' => $item->siswa->nama ?? 'Tidak Ditemukan',
             'kelas' => $item->siswa->kelas ?? 'Tidak Ditemukan',
-            'jurusan' => $item->jurusan ?? 'Tidak Ditemukan',
+            'jurusan' => $item->siswa->jurusan->jurusan . ' (' . $item->jurusan . ')' ?? 'Tidak Ditemukan',
         ];
     });
 

@@ -38,10 +38,10 @@ class SearchController extends Controller
         $results = [];
 
 
-        
+
         $pengajuan = Pengajuan::findOrFail($request->pengajuan_id);
         $search = $request->q;
-        
+
         $results = Instruktur::with('dudi:id_dudi,nama') // relasi akan include nama DUDI
             ->where('is_active', 1)
             ->where('id_dudi', $pengajuan->perusahaan_tujuan)
@@ -58,18 +58,18 @@ class SearchController extends Controller
                     'text' => $item->nama . ' - ' . ($item->dudi ? $item->dudi->nama : '-'),
                 ];
             });
-        
-        
+
+
 
         return response()->json(['results' => $results]);
     }
 
-    
+
     public function getDataByGuru(Request $request, $id)
     {
-        
+
         $results = [];
-        $siswa = PengajuanDetail::where('id_surat', $id)->first()->nim;
+        $siswa = PengajuanDetail::where('id_surat', $id)->first()->nis;
         $jurusan = Siswa::where('nis', $siswa)->first()->id_jurusan;
 
         $results = Guru::where('id_jurusan', $jurusan)->get();

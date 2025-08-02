@@ -107,7 +107,7 @@ class PenilaianController extends Controller
                             <a href="' . route('penilaian.edit', $siswa->nis) . '" class="btn btn-warning btn-sm">
                                 <i class="bi bi-pencil"></i> Edit
                             </a>
-                            <a href="' . route('penilaian.print', $siswa->nis) . '" class="btn btn-secondary btn-sm" target="_blank">
+                            <a href="' . url('penilaian/' . $siswa->nis . '/' . (request('id_ta', getActiveAcademicYear()->id_ta)) . '/' . (request('kelompok', $siswa->kelompok ?? 'all')) . '/print') . '" class="btn btn-secondary btn-sm" target="_blank">
                                 <i class="bi bi-printer"></i> Cetak
                             </a>
                         ';
@@ -200,9 +200,8 @@ class PenilaianController extends Controller
             $validated = $request->validate([
                 'id_siswa' => 'required|exists:siswa,nis',
                 'catatan' => 'nullable|string',
-                'projectpkl' => 'required|string',
                 'nilai-sub' => 'required|array',
-                'nilai-sub.*' => 'required|in:0,1',
+                'nilai-sub.*' => 'required',
             ]);
 
             $userId = Auth::id() ?? 1;
@@ -235,10 +234,6 @@ class PenilaianController extends Controller
                 $userId
             );
 
-            Penempatan::where('nis', $request->id_siswa)->update([
-                'projectpkl' => $request->projectpkl
-            ]);
-
             // Step 2: Calculate and save main indicator scores to Penilaian
             $this->saveMainIndicatorAssessments(
                 $request->id_siswa,
@@ -261,8 +256,13 @@ class PenilaianController extends Controller
             DB::rollBack();
             Log::error('Error in PenilaianController@store: ' . $e->getMessage());
 
-            return redirect()->route('penilaian.index')
-                ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            if (Auth::user()->role == 4) {
+                return redirect()->route('d.instruktur')
+                    ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            } else {
+                return redirect()->route('penilaian.index')
+                    ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            }
         }
     }
 
@@ -1190,33 +1190,44 @@ class PenilaianController extends Controller
      * Generate a printable assessment report.
      *
      * @param  string  $nis
+     * @param  int  $id_ta
+     * @param  string  $kelompok
      * @return \Illuminate\Http\Response
      */
-    public function print($nis)
+    public function print($nis, $id_ta = null, $kelompok = null)
     {
+        // dd($nis, $id_ta, $kelompok);
         try {
-            // Get student data
-            $siswa = Siswa::with(['jurusan'])
-                ->where('nis', $nis)
+            $penempatan = Penempatan::where('id_ta', $id_ta)
+                ->where('kelompok', $kelompok)
                 ->where('is_active', 1)
-                ->firstOrFail();
-            // Get current active academic year
-            $tahunAkademik = ThnAkademik::where('is_active', 1)->first();
+                ->get();
+
+            // dd($penempatan);
+            if (Auth::user()->role == 5) {
+                if (Auth::user()->siswa->nis != $nis) {
+                    return redirect()->route('penilaian.index')
+                        ->with('error', 'Anda tidak memiliki akses untuk mencetak penilaian ini.');
+                }
+            }
+
+            // Get academic year - use passed parameter or get active one
+            $tahunAkademik = null;
+            if ($id_ta) {
+                $tahunAkademik = ThnAkademik::where('id_ta', $id_ta)->first();
+            }
+            if (!$tahunAkademik) {
+                $tahunAkademik = ThnAkademik::where('is_active', 1)->first();
+            }
+
             if (!$tahunAkademik) {
                 return redirect()->route('penilaian.index')
                     ->with('error', 'Tahun akademik aktif tidak ditemukan.');
             }
 
-            // Get Penempatan
-            $penempatan = Penempatan::where('nis', $siswa->nis)
-                ->first();
-
             $presensi = Presensi::where('id_penempatan', $penempatan->id_penempatan)
                 ->selectRaw('keterangan, count(*) as jumlah')
                 ->groupBy('keterangan')->get();
-            
-            $projectpkl = Penempatan::where('nis', $siswa->nis)
-                ->first();
 
             // Get main penilaian record
             $mainPenilaian = Penilaian::where('nis', $nis)
@@ -1262,6 +1273,37 @@ class PenilaianController extends Controller
             // Get catatan
             $catatanText = $mainPenilaian->catatan;
 
+            // Get project title
+            $projectTitle = $mainPenilaian->projectpkl ?? '';
+
+            // Get all students in the same placement for comparison
+            $allStudents = collect();
+            if ($penempatan) {
+                $query = Siswa::whereHas('penempatan', function($query) use ($penempatan) {
+                    $query->where('id_instansi', $penempatan->id_instansi);
+                })
+                ->where('is_active', 1);
+
+                // Filter by kelompok if provided and not 'all'
+                if ($kelompok && $kelompok !== 'all') {
+                    $query->where('kelompok', $kelompok);
+                }
+
+                $allStudents = $query->take(4)->get(); // Limit to 4 students for the table
+            }
+
+            // Get assessment data for all students
+            $assessmentData = [];
+            foreach ($allStudents as $student) {
+                $studentAssessment = Penilaian::where('nis', $student->nis)
+                    ->whereNotNull('id_prg_obsvr')
+                    ->where('is_active', 1)
+                    ->get()
+                    ->keyBy('id_prg_obsvr');
+
+                $assessmentData[$student->nis] = $studentAssessment;
+            }
+
             return view('pkl.penilaian.print', compact(
                 'siswa',
                 'mainIndicators',
@@ -1271,7 +1313,10 @@ class PenilaianController extends Controller
                 'tahunAkademik',
                 'penempatan',
                 'presensi',
-                'projectpkl'
+                'projectTitle',
+                'allStudents',
+                'assessmentData',
+                'kelompok'
             ));
 
         } catch (\Exception $e) {

@@ -49,16 +49,16 @@ class SiswaController extends Controller
                 'required',
                 'string',
                 'max:10',
-                'min:10',
+                'min:5',
                 Rule::unique('siswa')->where(function ($query) {
                     return $query->where('is_active', 1);
                 }),
             ],
             'nisn' => [
-                'required',
+                'nullable',
                 'string',
                 'max:10',
-                'min:10',
+                'min:5',
                 Rule::unique('siswa')->where(function ($query) {
                     return $query->where('is_active', 1);
                 }),
@@ -158,16 +158,16 @@ class SiswaController extends Controller
                 'required',
                 'string',
                 'max:10',
-                'min:10',
+                'min:5',
                 Rule::unique('siswa', 'nis')->ignore($nis, 'nis')->where(function ($query) {
                     return $query->where('is_active', 1);
                 }),
             ],
             'nisn' => [
-                'required',
+                'nullable',
                 'string',
                 'max:10',
-                'min:10',
+                'min:5',
                 Rule::unique('siswa', 'nisn')->ignore($nisn, 'nisn')->where(function ($query) {
                     return $query->where('is_active', 1);
                 }),

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    // menampilkan view login
+    // menampilkan view login hoho
     public function index()
     {
         if (session()->has('nis')) {

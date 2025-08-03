@@ -13,6 +13,7 @@ use App\Models\Presensi;
 use App\Models\TemplatePenilaian;
 use App\Models\TemplatePenilaianItem;
 use App\Models\ThnAkademik;
+use App\Models\NilaiQuesioner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -39,8 +40,14 @@ class PenilaianController extends Controller
     {
         try {
             $thnAkademik = getActiveAcademicYear();
-            $jurusans = Jurusan::where('is_active', 1)->get();
-            // $kelas = Kelas::where('is_active', 1)->get();
+            if (Auth::user()->role == 2) { // Jika login sebagai admin
+                $jurusans = Jurusan::where('is_active', 1)
+                    ->where('id_jurusan', session('id_jurusan'))
+                    ->get();
+                // dd($jurusans);
+            } else {
+                $jurusans = Jurusan::where('is_active', 1)->get();
+            }
 
             return view('pkl.penilaian.index', compact('jurusans', 'thnAkademik'));
         } catch (\Exception $e) {
@@ -174,6 +181,9 @@ class PenilaianController extends Controller
                 if (Auth::user()->role == 4) {
                     return redirect()->route('d.instruktur')
                         ->with('warning', 'Belum ada template penilaian untuk jurusan ini. Silakan buat template terlebih dahulu.');
+                } else if (Auth::user()->role == 5) { // role siswa
+                    return redirect()->route('d.siswa')
+                        ->with('warning', 'Belum ada template penilaian untuk jurusan ini. Silakan buat template terlebih dahulu.');
                 } else {
                     return redirect()->route('penilaian.index')
                         ->with('warning', 'Belum ada template penilaian untuk jurusan ini. Silakan buat template terlebih dahulu.');
@@ -185,6 +195,9 @@ class PenilaianController extends Controller
             Log::error('Error in PenilaianController@create: ' . $e->getMessage());
             if (Auth::user()->role == 4) {
                 return redirect()->route('d.instruktur')
+                    ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            } else if (Auth::user()->role == 5) { // role siswa
+                return redirect()->route('d.siswa')
                     ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
             } else {
                 return redirect()->route('penilaian.index')
@@ -209,8 +222,16 @@ class PenilaianController extends Controller
             // Get current active academic year
             $tahunAkademik = ThnAkademik::where('is_active', 1)->first();
             if (!$tahunAkademik) {
-                return redirect()->route('penilaian.index')
-                    ->with('error', 'Tahun akademik aktif tidak ditemukan.');
+                if (Auth::user()->role == 4) {
+                    return redirect()->route('d.instruktur')
+                        ->with('error', 'Tahun akademik aktif tidak ditemukan.');
+                } else if (Auth::user()->role == 5) { // role siswa
+                    return redirect()->route('d.siswa')
+                        ->with('error', 'Tahun akademik aktif tidak ditemukan.');
+                } else {
+                    return redirect()->route('penilaian.index')
+                        ->with('error', 'Tahun akademik aktif tidak ditemukan.');
+                }
             }
 
             // Get student data
@@ -219,8 +240,16 @@ class PenilaianController extends Controller
                 ->first();
 
             if (!$siswa) {
-                return redirect()->route('penilaian.index')
-                    ->with('error', 'Data siswa tidak ditemukan.');
+                if (Auth::user()->role == 4) {
+                    return redirect()->route('d.instruktur')
+                        ->with('error', 'Data siswa tidak ditemukan.');
+                } else if (Auth::user()->role == 5) { // role siswa
+                    return redirect()->route('d.siswa')
+                        ->with('error', 'Data siswa tidak ditemukan.');
+                } else {
+                    return redirect()->route('penilaian.index')
+                        ->with('error', 'Data siswa tidak ditemukan.');
+                }
             }
 
             // Begin transaction
@@ -231,7 +260,8 @@ class PenilaianController extends Controller
                 $request->input('nilai-sub', []),
                 $tahunAkademik->id_ta,
                 $siswa->id_jurusan,
-                $userId
+                $userId,
+                $siswa
             );
 
             // Step 2: Calculate and save main indicator scores to Penilaian
@@ -247,6 +277,9 @@ class PenilaianController extends Controller
             if (Auth::user()->role == 4) {
                 return redirect()->route('d.instruktur')
                     ->with('success', self::MESSAGE_SUCCESS_STORE);
+            } else if (Auth::user()->role == 5) { // role siswa
+                return redirect()->route('d.siswa')
+                    ->with('success', self::MESSAGE_SUCCESS_STORE);
             } else {
                 return redirect()->route('penilaian.index')
                     ->with('success', self::MESSAGE_SUCCESS_STORE);
@@ -259,6 +292,9 @@ class PenilaianController extends Controller
             if (Auth::user()->role == 4) {
                 return redirect()->route('d.instruktur')
                     ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            } else if (Auth::user()->role == 5) { // role siswa
+                return redirect()->route('d.siswa')
+                    ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
             } else {
                 return redirect()->route('penilaian.index')
                     ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
@@ -270,7 +306,7 @@ class PenilaianController extends Controller
      * Process all assessment data and save to PrgObsvr
      * Returns organized data for main indicator calculations
      */
-    private function processAssessmentData($assessmentValues, $tahunAkademikId, $jurusanId, $userId)
+    private function processAssessmentData($assessmentValues, $tahunAkademikId, $jurusanId, $userId, $siswa)
     {
         $mainIndicatorData = [];
         $level2Calculations = [];
@@ -298,6 +334,7 @@ class PenilaianController extends Controller
             if ($templateItem->level !== PrgObsvr::LEVEL_MAIN) continue;
 
             $mainPrgObsvr = new PrgObsvr();
+            $mainPrgObsvr->nis = $siswa->nis;
             $mainPrgObsvr->indikator = $templateItem->indikator;
             $mainPrgObsvr->id_ta = $tahunAkademikId;
             $mainPrgObsvr->id_jurusan = $jurusanId;
@@ -323,6 +360,7 @@ class PenilaianController extends Controller
             if ($templateItem->level !== PrgObsvr::LEVEL_SUB) continue;
 
             $subPrgObsvr = new PrgObsvr();
+            $subPrgObsvr->nis = $siswa->nis;
             $subPrgObsvr->indikator = $templateItem->indikator;
             $subPrgObsvr->id_ta = $tahunAkademikId;
             $subPrgObsvr->id_jurusan = $jurusanId;
@@ -369,6 +407,7 @@ class PenilaianController extends Controller
             if ($templateItem->level !== PrgObsvr::LEVEL_SUB_SUB) continue;
 
             $level3PrgObsvr = new PrgObsvr();
+            $level3PrgObsvr->nis = $siswa->nis;
             $level3PrgObsvr->indikator = $templateItem->indikator;
             $level3PrgObsvr->id_ta = $tahunAkademikId;
             $level3PrgObsvr->id_jurusan = $jurusanId;
@@ -424,11 +463,12 @@ class PenilaianController extends Controller
             $tahunAkademikId,
             $jurusanId,
             $userId,
-            $mainIndicatorData
+            $mainIndicatorData,
+            $siswa
         );
 
         // Calculate Main indicators from Level 2
-        $this->calculateMainIndicators($mainIndicatorData, $tahunAkademikId, $jurusanId, $userId);
+        $this->calculateMainIndicators($mainIndicatorData, $tahunAkademikId, $jurusanId, $userId, $siswa);
 
         return [
             'mainIndicators' => $mainIndicatorData,
@@ -439,14 +479,17 @@ class PenilaianController extends Controller
     /**
      * Calculate Level 2 indicators from Level 3 assessments
      */
-    private function calculateLevel2Indicators($level2Calculations, $tahunAkademikId, $jurusanId, $userId, &$mainIndicatorData)
+    private function calculateLevel2Indicators($level2Calculations, $tahunAkademikId, $jurusanId, $userId, &$mainIndicatorData, $siswa)
     {
         foreach ($level2Calculations as $level2TemplateId => $data) {
             $level2Template = TemplatePenilaianItem::find($level2TemplateId);
             if (!$level2Template) continue;
 
-            // Level 2 value = 1 only if ALL Level 3 items are 1
-            $level2Value = (array_sum($data['values']) == count($data['values'])) ? 1 : 0;
+            // Level 2 value = average of all Level 3 items
+            $level2Value = 0;
+            if (!empty($data['values'])) {
+                $level2Value = round(array_sum($data['values']) / count($data['values']));
+            }
 
             // Update existing Level 2 PrgObsvr with calculated value
             $level2PrgObsvr = PrgObsvr::where('indikator', $level2Template->indikator)
@@ -478,12 +521,12 @@ class PenilaianController extends Controller
     /**
      * Calculate Main indicators from Level 2 values
      */
-    private function calculateMainIndicators(&$mainIndicatorData, $tahunAkademikId, $jurusanId, $userId)
+    private function calculateMainIndicators(&$mainIndicatorData, $tahunAkademikId, $jurusanId, $userId, $siswa)
     {
         foreach ($mainIndicatorData as $mainTemplateId => &$data) {
             if (!empty($data['level2_values'])) {
-                // Calculate percentage
-                $percentage = (array_sum($data['level2_values']) / count($data['level2_values'])) * 100;
+                // Calculate percentage based on numeric values (0-100)
+                $percentage = round(array_sum($data['level2_values']) / count($data['level2_values']));
                 $data['percentage'] = $percentage;
 
                 // Save main indicator to PrgObsvr (without is_nilai, as it's calculated)
@@ -581,7 +624,10 @@ class PenilaianController extends Controller
                 $penilaian->created_by = $userId;
                 $penilaian->save();
 
-                $totalPercentages[] = $data['percentage'];
+                // Collect all sub indicator values for overall average calculation
+                if (isset($data['level2_values'])) {
+                    $totalPercentages = array_merge($totalPercentages, $data['level2_values']);
+                }
             }
         }
 
@@ -808,6 +854,9 @@ class PenilaianController extends Controller
                 if (Auth::user()->role == 4) {
                     return redirect()->route('d.instruktur')
                         ->with('warning', 'Template penilaian untuk jurusan ini tidak ditemukan.');
+                } else if (Auth::user()->role == 5) { // role siswa
+                    return redirect()->route('d.siswa')
+                        ->with('warning', 'Template penilaian untuk jurusan ini tidak ditemukan.');
                 } else {
                     return redirect()->route('penilaian.index')
                         ->with('warning', 'Template penilaian untuk jurusan ini tidak ditemukan.');
@@ -831,8 +880,16 @@ class PenilaianController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error in PenilaianController@edit: ' . $e->getMessage());
-            return redirect()->route('penilaian.index')
-                ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            if (Auth::user()->role == 4) {
+                return redirect()->route('d.instruktur')
+                    ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            } else if (Auth::user()->role == 5) { // role siswa
+                return redirect()->route('d.siswa')
+                    ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            } else {
+                return redirect()->route('penilaian.index')
+                    ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            }
         }
     }
 
@@ -878,7 +935,7 @@ class PenilaianController extends Controller
             $validated = $request->validate([
                 'catatan' => 'nullable|string|max:1000',
                 'nilai-sub' => 'required|array',
-                'nilai-sub.*' => 'required|in:0,1',
+                'nilai-sub.*' => 'required',
             ]);
 
             $userId = Auth::id() ?? 1;
@@ -886,8 +943,16 @@ class PenilaianController extends Controller
             // Get current active academic year
             $tahunAkademik = ThnAkademik::where('is_active', 1)->first();
             if (!$tahunAkademik) {
-                return redirect()->route('penilaian.index')
-                    ->with('error', 'Tahun akademik aktif tidak ditemukan.');
+                if (Auth::user()->role == 4) {
+                    return redirect()->route('d.instruktur')
+                        ->with('error', 'Tahun akademik aktif tidak ditemukan.');
+                } else if (Auth::user()->role == 5) { // role siswa
+                    return redirect()->route('d.siswa')
+                        ->with('error', 'Tahun akademik aktif tidak ditemukan.');
+                } else {
+                    return redirect()->route('penilaian.index')
+                        ->with('error', 'Tahun akademik aktif tidak ditemukan.');
+                }
             }
 
             // Get student data
@@ -896,8 +961,16 @@ class PenilaianController extends Controller
                 ->first();
 
             if (!$siswa) {
-                return redirect()->route('penilaian.index')
-                    ->with('error', 'Data siswa tidak ditemukan.');
+                if (Auth::user()->role == 4) {
+                    return redirect()->route('d.instruktur')
+                        ->with('error', 'Data siswa tidak ditemukan.');
+                } else if (Auth::user()->role == 5) { // role siswa
+                    return redirect()->route('d.siswa')
+                        ->with('error', 'Data siswa tidak ditemukan.');
+                } else {
+                    return redirect()->route('penilaian.index')
+                        ->with('error', 'Data siswa tidak ditemukan.');
+                }
             }
 
             // Begin transaction
@@ -934,9 +1007,16 @@ class PenilaianController extends Controller
             DB::rollBack();
             Log::error('Error in PenilaianController@update: ' . $e->getMessage());
 
-            return redirect()->back()
-                ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage())
-                ->withInput();
+            if (Auth::user()->role == 4) {
+                return redirect()->route('d.instruktur')
+                    ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            } else if (Auth::user()->role == 5) { // role siswa
+                return redirect()->route('d.siswa')
+                    ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            } else {
+                return redirect()->route('penilaian.index')
+                    ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            }
         }
     }
 
@@ -985,7 +1065,10 @@ class PenilaianController extends Controller
                 $penilaian->created_by = $userId;
                 $penilaian->save();
 
-                $totalPercentages[] = $data['percentage'];
+                // Collect all sub indicator values for overall average calculation
+                if (isset($data['level2_values'])) {
+                    $totalPercentages = array_merge($totalPercentages, $data['level2_values']);
+                }
             }
         }
 
@@ -1174,6 +1257,9 @@ class PenilaianController extends Controller
             if (Auth::user()->role == 4) {
                 return redirect()->route('d.instruktur')
                     ->with('success', self::MESSAGE_SUCCESS_DELETE);
+            } else if (Auth::user()->role == 5) { // role siswa
+                return redirect()->route('d.siswa')
+                    ->with('success', self::MESSAGE_SUCCESS_DELETE);
             } else {
                 return redirect()->route('penilaian.index')
                     ->with('success', self::MESSAGE_SUCCESS_DELETE);
@@ -1181,8 +1267,16 @@ class PenilaianController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error in PenilaianController@destroy: ' . $e->getMessage());
-            return redirect()->route('penilaian.index')
-                ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            if (Auth::user()->role == 4) {
+                return redirect()->route('d.instruktur')
+                    ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            } else if (Auth::user()->role == 5) { // role siswa
+                return redirect()->route('d.siswa')
+                    ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            } else {
+                return redirect()->route('penilaian.index')
+                    ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            }
         }
     }
 
@@ -1196,20 +1290,25 @@ class PenilaianController extends Controller
      */
     public function print($nis, $id_ta = null, $kelompok = null)
     {
-        // dd($nis, $id_ta, $kelompok);
         try {
-            $penempatan = Penempatan::where('id_ta', $id_ta)
-                ->where('kelompok', $kelompok)
+            // Get student data
+            $siswa = Siswa::with(['jurusan'])
+                ->where('nis', $nis)
                 ->where('is_active', 1)
-                ->get();
+                ->firstOrFail();
 
-            // dd($penempatan);
+            // Check access for role 5 (student)
             if (Auth::user()->role == 5) {
                 if (Auth::user()->siswa->nis != $nis) {
                     return redirect()->route('penilaian.index')
                         ->with('error', 'Anda tidak memiliki akses untuk mencetak penilaian ini.');
                 }
             }
+
+            // Get placement data
+            $penempatan = Penempatan::where('nis', $siswa->nis)
+                ->where('is_active', 1)
+                ->first();
 
             // Get academic year - use passed parameter or get active one
             $tahunAkademik = null;
@@ -1225,9 +1324,14 @@ class PenilaianController extends Controller
                     ->with('error', 'Tahun akademik aktif tidak ditemukan.');
             }
 
-            $presensi = Presensi::where('id_penempatan', $penempatan->id_penempatan)
-                ->selectRaw('keterangan, count(*) as jumlah')
-                ->groupBy('keterangan')->get();
+            // Get attendance data if placement exists
+            $presensi = collect();
+            if ($penempatan) {
+                $presensi = Presensi::where('id_penempatan', $penempatan->id_penempatan)
+                    ->selectRaw('keterangan, count(*) as jumlah')
+                    ->groupBy('keterangan')
+                    ->get();
+            }
 
             // Get main penilaian record
             $mainPenilaian = Penilaian::where('nis', $nis)
@@ -1247,7 +1351,29 @@ class PenilaianController extends Controller
                 ->where('is_active', 1)
                 ->get();
 
-            // Get main indicators with proper hierarchy
+            // Get main indicators with proper hierarchy and attach assessment values
+            // First, let's find what year has data for this jurusan
+            $availableYears = PrgObsvr::where('id_jurusan', $siswa->id_jurusan)
+                ->where('level', PrgObsvr::LEVEL_MAIN)
+                ->where('is_active', 1)
+                ->distinct()
+                ->pluck('id_ta')
+                ->toArray();
+
+            // Use the first available year, or the current academic year if none found
+            $yearToUse = !empty($availableYears) ? $availableYears[0] : $tahunAkademik->id_ta;
+
+            // Get distinct main indicators to avoid duplicates
+            $distinctMainIndicators = PrgObsvr::where('id_jurusan', $siswa->id_jurusan)
+                ->where('id_ta', $yearToUse)
+                ->where('level', PrgObsvr::LEVEL_MAIN)
+                ->where('is_active', 1)
+                ->select('indikator')
+                ->distinct()
+                ->pluck('indikator')
+                ->toArray();
+
+            // Get main indicators with children
             $mainIndicators = PrgObsvr::with([
                 'children' => function($query) {
                     $query->where('level', PrgObsvr::LEVEL_SUB)
@@ -1261,11 +1387,49 @@ class PenilaianController extends Controller
                 }
             ])
             ->where('id_jurusan', $siswa->id_jurusan)
-            ->where('id_ta', $tahunAkademik->id_ta)
+            ->where('id_ta', $yearToUse)
             ->where('level', PrgObsvr::LEVEL_MAIN)
             ->where('is_active', 1)
+            ->whereIn('indikator', $distinctMainIndicators)
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->unique('indikator')
+            ->values();
+
+
+            // Get PrgObsvr data for current student to show their assessment values
+            $currentStudentPrgObsvr = PrgObsvr::where('id_jurusan', $siswa->id_jurusan)
+                ->where('id_ta', $yearToUse)
+                ->where('is_active', 1)
+                ->whereNotNull('is_nilai')
+                ->get();
+
+            // Attach assessment values to main indicators (only if we have real data)
+            if ($mainIndicators->count() > 0 && $currentStudentPrgObsvr->count() > 0) {
+                foreach ($mainIndicators as $mainIndicator) {
+                    foreach ($mainIndicator->children as $subIndicator) {
+                        // Find the PrgObsvr record for this sub indicator by matching indikator
+                        $prgObsvrRecord = $currentStudentPrgObsvr->where('indikator', $subIndicator->indikator)->first();
+                        if ($prgObsvrRecord) {
+                            $subIndicator->is_nilai = $prgObsvrRecord->is_nilai;
+                        } else {
+                            // If no record found, set a sample value for demonstration
+                            // $subIndicator->is_nilai = rand(70, 95);
+                        }
+
+                        // Also check level 3 children
+                        foreach ($subIndicator->level3Children as $level3Indicator) {
+                            $level3PrgObsvrRecord = $currentStudentPrgObsvr->where('indikator', $level3Indicator->indikator)->first();
+                            if ($level3PrgObsvrRecord) {
+                                $level3Indicator->is_nilai = $level3PrgObsvrRecord->is_nilai;
+                            } else {
+                                // If no record found, set a sample value for demonstration
+                                // $level3Indicator->is_nilai = rand(70, 95);
+                            }
+                        }
+                    }
+                }
+            }
 
             // Calculate final score
             $nilaiAkhir = $mainPenilaian->nilai_instruktur ?? 0;
@@ -1279,15 +1443,12 @@ class PenilaianController extends Controller
             // Get all students in the same placement for comparison
             $allStudents = collect();
             if ($penempatan) {
-                $query = Siswa::whereHas('penempatan', function($query) use ($penempatan) {
-                    $query->where('id_instansi', $penempatan->id_instansi);
-                })
-                ->where('is_active', 1);
-
-                // Filter by kelompok if provided and not 'all'
-                if ($kelompok && $kelompok !== 'all') {
-                    $query->where('kelompok', $kelompok);
-                }
+                $query = Siswa::whereHas('penempatan', function($q) use ($penempatan, $kelompok) {
+                    $q->where('is_active', 1);
+                    if ($kelompok && $kelompok !== 'all') {
+                        $q->where('kelompok', $kelompok);
+                    }
+                });
 
                 $allStudents = $query->take(4)->get(); // Limit to 4 students for the table
             }
@@ -1295,29 +1456,88 @@ class PenilaianController extends Controller
             // Get assessment data for all students
             $assessmentData = [];
             foreach ($allStudents as $student) {
-                $studentAssessment = Penilaian::where('nis', $student->nis)
-                    ->whereNotNull('id_prg_obsvr')
+                // Get sub-indicator assessment data from PrgObsvr for this student's jurusan and year
+                // Since Penilaian table only stores main indicators, we need to get sub-indicators from PrgObsvr
+                $studentPrgObsvr = PrgObsvr::where('id_jurusan', $siswa->id_jurusan)
+                    ->where('id_ta', $yearToUse)
+                    ->where('level', PrgObsvr::LEVEL_SUB)
                     ->where('is_active', 1)
-                    ->get()
-                    ->keyBy('id_prg_obsvr');
+                    ->whereNotNull('is_nilai')
+                    ->where('nis', $student->nis)
+                    ->get();
 
-                $assessmentData[$student->nis] = $studentAssessment;
+                $assessmentData[$student->nis] = $studentPrgObsvr;
             }
 
-            return view('pkl.penilaian.print', compact(
-                'siswa',
-                'mainIndicators',
-                'mainIndicatorPenilaian',
-                'nilaiAkhir',
-                'catatanText',
-                'tahunAkademik',
-                'penempatan',
-                'presensi',
-                'projectTitle',
-                'allStudents',
-                'assessmentData',
-                'kelompok'
-            ));
+            // Debug: Check what data we have
+            // dd([
+            //     'yearToUse' => $yearToUse,
+            //     'jurusan_id' => $siswa->id_jurusan,
+            //     'assessment_data_count' => count($assessmentData),
+            //     'sample_assessment_data' => $assessmentData[$siswa->nis] ?? 'No data',
+            //     'all_students' => $allStudents->pluck('nama', 'nis')->toArray(),
+            //     'penilaian_count_for_aji' => Penilaian::where('nis', $siswa->nis)->where('is_active', 1)->count(),
+            //     'prg_obsvr_sub_count' => PrgObsvr::where('id_jurusan', $siswa->id_jurusan)
+            //         ->where('id_ta', $yearToUse)
+            //         ->where('level', PrgObsvr::LEVEL_SUB)
+            //         ->where('is_active', 1)
+            //         ->whereNotNull('is_nilai')
+            //         ->count()
+            // ]);
+
+            $nilaiRecords = NilaiQuesioner::with(['instruktur', 'quesioner'])
+            ->where('id_instruktur', $penempatan->id_instruktur)
+            ->where('id_ta', $tahunAkademik->id_ta)
+            ->where('nilai_quesioner.is_active', true)
+            ->get();
+            // dd($nilaiRecords);
+
+
+        // Mengambil semua quesioner terkait dan nilainya dari NilaiQuesioner
+        $dataAngket = $nilaiRecords->map(function ($nilai) {
+            return [
+                'id_nilai' => $nilai->id_nilai,
+                'id_quesioner' => $nilai->quesioner->id_quesioner,
+                'soal' => $nilai->quesioner->soal,
+                'nilai' => $nilai->nilai,  // Mengambil nilai langsung dari tabel NilaiQuesioner
+            ];
+        });
+
+        // return view('pkl.penilaian.printpdf', compact(
+        //     'siswa',
+        //     'mainIndicators',
+        //     'mainIndicatorPenilaian',
+        //     'nilaiAkhir',
+        //     'catatanText',
+        //     'tahunAkademik',
+        //     'penempatan',
+        //     'presensi',
+        //     'projectTitle',
+        //     'allStudents',
+        //     'assessmentData',
+        //     'currentStudentPrgObsvr',
+        //     'kelompok',
+        //     'dataAngket'
+        // ));
+
+        // Generate PDF dari view 'pkl.penilaian.print' dan tampilkan di browser
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pkl.penilaian.print', [
+            'siswa' => $siswa,
+            'mainIndicators' => $mainIndicators,
+            'mainIndicatorPenilaian' => $mainIndicatorPenilaian,
+            'nilaiAkhir' => $nilaiAkhir,
+            'catatanText' => $catatanText,
+            'tahunAkademik' => $tahunAkademik,
+            'penempatan' => $penempatan,
+            'presensi' => $presensi,
+            'projectTitle' => $projectTitle,
+            'allStudents' => $allStudents,
+            'assessmentData' => $assessmentData,
+            'currentStudentPrgObsvr' => $currentStudentPrgObsvr,
+            'kelompok' => $kelompok,
+            'dataAngket' => $dataAngket
+        ]);
+        return $pdf->stream();
 
         } catch (\Exception $e) {
             Log::error('Error in PenilaianController@print: ' . $e->getMessage());

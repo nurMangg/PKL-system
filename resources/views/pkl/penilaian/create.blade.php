@@ -125,9 +125,11 @@
                                                         name="nilai-sub[{{ $subItem->id }}]"
                                                         min="0"
                                                         max="100"
+                                                        step="1"
                                                         data-sub-id="{{ $subItem->id }}"
                                                         data-main-id="{{ $mainItem->id }}"
-                                                        placeholder="Masukkan nilai 0-100">
+                                                        placeholder="Masukkan nilai 0-100"
+                                                        oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;">
                                                 @endif
                                             </td>
                                         </tr>
@@ -146,10 +148,12 @@
                                                             name="nilai-sub[{{ $subSubItem->id }}]"
                                                             min="0"
                                                             max="100"
+                                                            step="1"
                                                             data-subsub-id="{{ $subSubItem->id }}"
                                                             data-sub-id="{{ $subItem->id }}"
                                                             data-main-id="{{ $mainItem->id }}"
-                                                            placeholder="Masukkan nilai 0-100">
+                                                            placeholder="Masukkan nilai 0-100"
+                                                            oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;">
                                                     </td>
                                                 </tr>
                                             @endforeach
@@ -295,6 +299,13 @@ $(document).ready(function() {
         const subId = $(this).data('sub-id');
         const value = $(this).val();
 
+        // Validate input range
+        if (value !== '' && (value < 0 || value > 100)) {
+            alert('Nilai harus antara 0-100');
+            $(this).val('');
+            return;
+        }
+
         updateKeterangan(`ket-subsub-${subSubId}`, value);
         calculateLevel2(subId);
     });
@@ -304,8 +315,56 @@ $(document).ready(function() {
         const mainId = $(this).data('main-id');
         const value = $(this).val();
 
+        // Validate input range
+        if (value !== '' && (value < 0 || value > 100)) {
+            alert('Nilai harus antara 0-100');
+            $(this).val('');
+            return;
+        }
+
         updateKeterangan(`ket-sub-${subId}`, value);
         calculateMainIndicator(mainId);
+    });
+
+    // Form validation before submission
+    $('#penilaianForm').on('submit', function(e) {
+        e.preventDefault();
+
+        // Validate all numeric inputs
+        let isValid = true;
+        $('.level3-assessment, .sub-direct-assessment').each(function() {
+            const value = $(this).val();
+            if (value !== '' && (value < 0 || value > 100)) {
+                alert('Semua nilai harus antara 0-100');
+                $(this).focus();
+                isValid = false;
+                return false;
+            }
+        });
+
+        if (!isValid) {
+            return false;
+        }
+
+        // Check if form is complete
+        let allAssessed = true;
+        $('.level3-assessment, .sub-direct-assessment').each(function() {
+            const val = $(this).val();
+            if (val === '' || val === null || val === undefined) {
+                allAssessed = false;
+                return false;
+            }
+        });
+
+        if (!allAssessed) {
+            alert('Semua indikator penilaian harus diisi');
+            return false;
+        }
+
+        $('#submitBtn').prop('disabled', !allAssessed);
+
+        // Submit form if valid
+        this.submit();
     });
 
     // Initial form completion check

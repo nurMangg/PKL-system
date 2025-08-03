@@ -24,7 +24,7 @@
                 <a href="{{ route('penilaian.edit', $siswa->nis) }}" class="btn btn-warning">
                     <i class="bi bi-pencil"></i> Edit Penilaian
                 </a>
-                <a href="{{ route('penilaian.print', $siswa->nis) }}" class="btn btn-primary" target="_blank">
+                <a href="{{ url('penilaian/' . $siswa->nis . '/' . ($penempatan->id_ta ?? '1') . '/' . ($siswa->kelompok ?? 'all') . '/print') }}" class="btn btn-primary" target="_blank">
                     <i class="bi bi-printer"></i> Cetak Penilaian
                 </a>
             </div>
@@ -98,7 +98,7 @@
                                         {{ number_format($mainIndicator->penilaian->nilai_instruktur, 0) }}%
                                     </span>
                                 @else
-                                    <span class="badge bg-secondary">Tidak Dinilai</span>
+                                    <span class="badge bg-secondary">-</span>
                                 @endif
                             </td>
                             <td>
@@ -120,17 +120,21 @@
                                         {{ $subIndicator->indikator }}
                                     </td>
                                     <td class="text-center">
-                                        @if($subIndicator->is_nilai == 1)
-                                            <span class="badge bg-success">Ya</span>
+                                        @if($subIndicator->is_nilai !== null)
+                                            <span class="badge bg-primary">{{ $subIndicator->is_nilai }}</span>
                                         @else
-                                            <span class="badge bg-danger">Tidak</span>
+                                            <span class="badge bg-secondary">-</span>
                                         @endif
                                     </td>
                                     <td>
-                                        @if($subIndicator->is_nilai == 1)
-                                            Tercapai
+                                        @if($subIndicator->is_nilai !== null)
+                                            @if($subIndicator->is_nilai >= 80)
+                                                <span class="text-success">Tercapai</span>
+                                            @else
+                                                <span class="text-danger">Tidak Tercapai</span>
+                                            @endif
                                         @else
-                                            Tidak Tercapai
+                                            <span class="text-muted">Belum Dinilai</span>
                                         @endif
                                     </td>
                                 </tr>
@@ -145,17 +149,21 @@
                                                 {{ $subSubIndicator->indikator }}
                                             </td>
                                             <td class="text-center">
-                                                @if($subSubIndicator->is_nilai == 1)
-                                                    <span class="badge bg-success">Ya</span>
+                                                @if($subSubIndicator->is_nilai !== null)
+                                                    <span class="badge bg-primary">{{ $subSubIndicator->is_nilai }}</span>
                                                 @else
-                                                    <span class="badge bg-danger">Tidak</span>
+                                                    <span class="badge bg-secondary">-</span>
                                                 @endif
                                             </td>
                                             <td>
-                                                @if($subSubIndicator->is_nilai == 1)
-                                                    Tercapai
+                                                @if($subSubIndicator->is_nilai !== null)
+                                                    @if($subSubIndicator->is_nilai >= 80)
+                                                        <span class="text-success">Tercapai</span>
+                                                    @else
+                                                        <span class="text-danger">Tidak Tercapai</span>
+                                                    @endif
                                                 @else
-                                                    Tidak Tercapai
+                                                    <span class="text-muted">Belum Dinilai</span>
                                                 @endif
                                             </td>
                                         </tr>
@@ -207,7 +215,7 @@
                         <table class="table table-sm">
                             <tr>
                                 <th width="40%">Dinilai Oleh</th>
-                                <td>{{ $mainIndicatorPenilaian->first()->created_by ?? 'N/A' }}</td>
+                                <td>{{ $mainIndicatorPenilaian->first()->id_instruktur ?? 'N/A' }}</td>
                             </tr>
                             <tr>
                                 <th>Tanggal Penilaian</th>

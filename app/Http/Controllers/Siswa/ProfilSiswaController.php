@@ -292,7 +292,7 @@ class ProfilSiswaController extends Controller
     }
 
 
-    
+
 
     // excel
     public function presensiExcel(Request $request)
@@ -456,8 +456,13 @@ class ProfilSiswaController extends Controller
             return 'Hasil Nilai PKL';
         })
         ->addColumn('aksi', function ($nilai) {
+            $penempatan = Penempatan::where('nis', $nilai->siswa->nis)->first();
             return '
-                <a href="' . route('penilaian.print', $nilai->siswa->nis) . '" class="btn btn-secondary btn-sm" target="_blank">
+                <a href="' . route('penilaian.print', [
+                    'id_siswa' => $nilai->siswa->nis,
+                    'id_ta' => $penempatan->id_ta,
+                    'kelompok' => $penempatan->kelompok ?? 'all'
+                ]) . '" class="btn btn-secondary btn-sm" target="_blank">
                     <i class="bi bi-printer"></i> Cetak
                 </a>
             ';

@@ -20,7 +20,7 @@
         {{ session('success') }}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-    
+
 @endif
 
 @if (session('error'))
@@ -35,25 +35,32 @@
         {{ session('warning') }}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-    
+
 @endif
 <div class="card">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="card-title">Daftar Siswa PKL Tahun Akademik {{ $thnAkademik->tahun_akademik ?? 'N/A' }}</h5>
-            
+
         </div>
 
         <div class="row mb-3">
             <div class="col-md-6">
                 <div class="form-group">
                     <label for="jurusan_filter">Jurusan</label>
-                    <select id="jurusan_filter" class="form-select">
-                        <option value="">Semua Jurusan</option>
-                        @foreach($jurusans as $jurusan)
-                            <option value="{{ $jurusan->id_jurusan }}">{{ $jurusan->jurusan }}</option>
-                        @endforeach
+                    <select id="jurusan_filter" class="form-select" @if(Auth::user()->role == 2) disabled @endif>
+                        @if(Auth::user()->role == 2)
+                            @foreach($jurusans as $jurusan)
+                                <option value="{{ $jurusan->id_jurusan }}" selected>{{ $jurusan->jurusan }}</option>
+                            @endforeach
+                        @else
+                            <option value="">Semua Jurusan</option>
+                            @foreach($jurusans as $jurusan)
+                                <option value="{{ $jurusan->id_jurusan }}">{{ $jurusan->jurusan }}</option>
+                            @endforeach
+                        @endif
                     </select>
+                    <input type="hidden" id="jurusan_filter_hidden" value="@if(Auth::user()->role == 2){{ $jurusans->first()->id_jurusan ?? '' }}@endif">
                 </div>
             </div>
         </div>

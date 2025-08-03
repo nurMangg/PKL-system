@@ -14,7 +14,7 @@ class PrgObsvr extends Model
     // public $timestamps = false;
 
     protected $fillable = [
-        'indikator', 'is_nilai', 'id_ta', 'id_guru', 'id_jurusan', 'id1','id2',
+        'indikator', 'is_nilai', 'id_ta', 'id_guru', 'id_jurusan', 'id1','id2', 'nis',
         'level', 'is_active', 'created_at', 'created_by', 'updated_at', 'updated_by'
     ];
 
@@ -134,12 +134,12 @@ class PrgObsvr extends Model
         if ($this->level == self::LEVEL_SUB_SUB) {
             return true;
         }
-        
+
         // Level 2 dinilai jika tidak ada level 3
         if ($this->level == self::LEVEL_SUB) {
             return !$this->level3Children()->exists();
         }
-        
+
         // Level 1 tidak pernah dinilai langsung
         return false;
     }

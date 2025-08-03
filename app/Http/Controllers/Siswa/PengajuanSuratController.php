@@ -26,6 +26,7 @@ class PengajuanSuratController extends Controller
         $thnAkademik = ThnAkademik::where('is_active', true)->orderBy('tahun_akademik', 'desc')->get();
         $tahunAkademikExcel = $thnAkademik;
         $masterExcel = asset('assets/excel/master-pengajuan-surat.xlsx');
+
         return view('pkl.pengajuan-surat.index', compact('thnAkademik', 'aktifAkademik','tahunAkademikExcel','masterExcel'));
     }
 
@@ -369,11 +370,15 @@ public function search(Request $request)
 
             // Filter berdasarkan role user
             if (Auth::user()->role == 2) {
+                // dd(session('id_jurusan'));
                 // Untuk role 2, filter berdasarkan jurusan yang ada di session
                 $pengajuanSurat = $pengajuanSurat->whereHas('pengajuanDetail.siswa', function ($query) {
-                    $query->where('id_jurusan', session('id_jurusan'));
+                    $query->where('jurusan', session('id_jurusan'));
                 });
+                // dd($pengajuanSurat);
             }
+
+            // dd($pengajuanSurat);
 
             return DataTables::of($pengajuanSurat)
                 ->addIndexColumn()

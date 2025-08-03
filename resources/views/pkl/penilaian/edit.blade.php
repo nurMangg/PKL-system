@@ -63,19 +63,11 @@
             @csrf
             @method('PUT')
 
-            <div class="row mb-3 mt-4">
-                <div class="col-md-12">
-                    <label for="projectpkl" class="form-label">Masukkan Judul Project PKL</label>
-                    <input class="form-control" id="projectpkl" name="projectpkl"
-                              value="{{ $projectpkl->projectpkl ?? '' }}"></input>
-                </div>
-            </div>
-
             <h5 class="card-title">Edit Form Penilaian</h5>
             <div class="alert alert-info">
                 <i class="bi bi-info-circle"></i>
                 <strong>Petunjuk Edit Penilaian:</strong><br>
-                • Pilih Ya/Tidak untuk setiap indikator penilaian<br>
+                • Masukkan nilai 0-100 untuk setiap indikator penilaian<br>
                 • Nilai yang sudah ada akan ditampilkan sebagai nilai default
             </div>
 
@@ -85,7 +77,7 @@
                         <tr>
                             <th width="5%">No</th>
                             <th width="60%">Indikator Penilaian</th>
-                            <th width="20%">Ketercapaian (Ya/Tidak)</th>
+                            <th width="20%">Nilai (0-100)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -107,7 +99,6 @@
                                             data-main-id="{{ $mainItem->id }}"
                                             placeholder="Dihitung otomatis">
                                     </td>
-
                                 </tr>
 
                                 {{-- Level 2 - Sub Indicators --}}
@@ -131,38 +122,28 @@
                                                 @else
                                                     {{-- No Level 3, so this is assessed directly --}}
                                                     @php
-                                                        $currentValue = $existingValues[$subItem->id] ?? null;
+                                                        $currentValue = $existingValues[$subItem->id] ?? '';
                                                     @endphp
-                                                    <div class="form-check form-check-inline">
-                                                        <input class="form-check-input nilai-radio sub-direct-assessment"
-                                                               type="radio"
-                                                               name="nilai-sub[{{ $subItem->id }}]"
-                                                               value="1"
-                                                               data-sub-id="{{ $subItem->id }}"
-                                                               data-main-id="{{ $mainItem->id }}"
-                                                               {{ $currentValue == 1 ? 'checked' : '' }}>
-                                                        <label class="form-check-label">Ya</label>
-                                                    </div>
-                                                    <div class="form-check form-check-inline">
-                                                        <input class="form-check-input nilai-radio sub-direct-assessment"
-                                                               type="radio"
-                                                               name="nilai-sub[{{ $subItem->id }}]"
-                                                               value="0"
-                                                               data-sub-id="{{ $subItem->id }}"
-                                                               data-main-id="{{ $mainItem->id }}"
-                                                               {{ $currentValue == 0 ? 'checked' : '' }}>
-                                                        <label class="form-check-label">Tidak</label>
-                                                    </div>
+                                                    <input type="number"
+                                                        class="form-control sub-direct-assessment"
+                                                        name="nilai-sub[{{ $subItem->id }}]"
+                                                        min="0"
+                                                        max="100"
+                                                        step="1"
+                                                        value="{{ $currentValue }}"
+                                                        data-sub-id="{{ $subItem->id }}"
+                                                        data-main-id="{{ $mainItem->id }}"
+                                                        placeholder="Masukkan nilai 0-100"
+                                                        oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;">
                                                 @endif
                                             </td>
-
                                         </tr>
 
                                         {{-- Level 3 - Sub-Sub Indicators --}}
                                         @if ($subItem->level3Children->isNotEmpty())
                                             @foreach ($subItem->level3Children as $subSubItem)
                                                 @php
-                                                    $currentValue = $existingValues[$subSubItem->id] ?? null;
+                                                    $currentValue = $existingValues[$subSubItem->id] ?? '';
                                                 @endphp
                                                 <tr>
                                                     <td></td>
@@ -170,30 +151,19 @@
                                                         {{ $subSubItem->indikator }}
                                                     </td>
                                                     <td>
-                                                        <div class="form-check form-check-inline">
-                                                            <input class="form-check-input nilai-radio level3-assessment"
-                                                                   type="radio"
-                                                                   name="nilai-sub[{{ $subSubItem->id }}]"
-                                                                   value="1"
-                                                                   data-subsub-id="{{ $subSubItem->id }}"
-                                                                   data-sub-id="{{ $subItem->id }}"
-                                                                   data-main-id="{{ $mainItem->id }}"
-                                                                   {{ $currentValue == 1 ? 'checked' : '' }}>
-                                                            <label class="form-check-label">Ya</label>
-                                                        </div>
-                                                        <div class="form-check form-check-inline">
-                                                            <input class="form-check-input nilai-radio level3-assessment"
-                                                                   type="radio"
-                                                                   name="nilai-sub[{{ $subSubItem->id }}]"
-                                                                   value="0"
-                                                                   data-subsub-id="{{ $subSubItem->id }}"
-                                                                   data-sub-id="{{ $subItem->id }}"
-                                                                   data-main-id="{{ $mainItem->id }}"
-                                                                   {{ $currentValue == 0 ? 'checked' : '' }}>
-                                                            <label class="form-check-label">Tidak</label>
-                                                        </div>
+                                                        <input type="number"
+                                                            class="form-control level3-assessment"
+                                                            name="nilai-sub[{{ $subSubItem->id }}]"
+                                                            min="0"
+                                                            max="100"
+                                                            step="1"
+                                                            value="{{ $currentValue }}"
+                                                            data-subsub-id="{{ $subSubItem->id }}"
+                                                            data-sub-id="{{ $subItem->id }}"
+                                                            data-main-id="{{ $mainItem->id }}"
+                                                            placeholder="Masukkan nilai 0-100"
+                                                            oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value > 100) this.value = 100; if(this.value < 0) this.value = 0;">
                                                     </td>
-
                                                 </tr>
                                             @endforeach
                                         @endif
@@ -253,8 +223,8 @@ $(document).ready(function() {
     // Store original values for comparison
     const originalValues = {};
 
-    // Initialize original values and calculations
-    $('.nilai-radio:checked').each(function() {
+    // Initialize original values
+    $('.sub-direct-assessment, .level3-assessment').each(function() {
         const name = $(this).attr('name');
         originalValues[name] = $(this).val();
     });
@@ -265,9 +235,9 @@ $(document).ready(function() {
     // Function to update keterangan based on value
     function updateKeterangan(elementId, value) {
         const ketElement = $('#' + elementId);
-        if (value === 1 || value === '1') {
+        if (value >= 80) {
             ketElement.removeClass('bg-secondary bg-danger').addClass('bg-success').text('Tercapai');
-        } else if (value === 0 || value === '0') {
+        } else if (value >= 0) {
             ketElement.removeClass('bg-secondary bg-success').addClass('bg-danger').text('Tidak Tercapai');
         } else {
             ketElement.removeClass('bg-success bg-danger').addClass('bg-secondary').text('Menunggu');
@@ -279,22 +249,28 @@ $(document).ready(function() {
         let total = 0;
         let count = 0;
 
-        $(`input[data-sub-id="${subId}"].level3-assessment:checked`).each(function() {
-            total += parseInt($(this).val());
-            count++;
+        $(`input[data-sub-id="${subId}"].level3-assessment`).each(function() {
+            const val = $(this).val();
+            if (val !== '') {
+                total += parseInt(val);
+                count++;
+            }
         });
 
         // Check if all level 3 items for this sub are assessed
-        const totalLevel3Items = $(`input[data-sub-id="${subId}"].level3-assessment`).length / 2;
+        const totalLevel3Items = $(`input[data-sub-id="${subId}"].level3-assessment`).length;
 
-        if (count === totalLevel3Items) {
-            const level2Value = (total === count) ? 1 : 0;
+        if (count === totalLevel3Items && count > 0) {
+            // All level 3 items assessed
+            const level2Value = Math.round(total / count);
             $(`input[data-sub-id="${subId}"].sub-indicator-value`).val(level2Value);
             updateKeterangan(`ket-sub-${subId}`, level2Value);
 
+            // Calculate main indicator
             const mainId = $(`input[data-sub-id="${subId}"]`).first().data('main-id');
             calculateMainIndicator(mainId);
         } else {
+            // Not all assessed yet
             $(`input[data-sub-id="${subId}"].sub-indicator-value`).val('');
             updateKeterangan(`ket-sub-${subId}`, null);
         }
@@ -306,9 +282,12 @@ $(document).ready(function() {
         let count = 0;
 
         // Check direct sub assessments
-        $(`input[data-main-id="${mainId}"].sub-direct-assessment:checked`).each(function() {
-            total += parseInt($(this).val());
-            count++;
+        $(`input[data-main-id="${mainId}"].sub-direct-assessment`).each(function() {
+            const val = $(this).val();
+            if (val !== '') {
+                total += parseInt(val);
+                count++;
+            }
         });
 
         // Check calculated sub values
@@ -321,12 +300,13 @@ $(document).ready(function() {
         });
 
         // Check total sub indicators for this main
-        const totalSubItems = $(`input[data-main-id="${mainId}"].sub-direct-assessment`).length / 2 +
+        const totalSubItems = $(`input[data-main-id="${mainId}"].sub-direct-assessment`).length +
                              $(`input[data-main-id="${mainId}"].sub-indicator-value`).length;
 
-        if (count === totalSubItems) {
-            const percentage = (count > 0) ? (total / count) * 100 : 0;
-            $(`input[data-main-id="${mainId}"].main-indicator-value`).val(percentage.toFixed(0));
+        if (count === totalSubItems && count > 0) {
+            // All sub indicators assessed
+            const percentage = Math.round(total / count);
+            $(`input[data-main-id="${mainId}"].main-indicator-value`).val(percentage);
 
             if (percentage >= 80) {
                 updateKeterangan(`ket-main-${mainId}`, 1);
@@ -343,8 +323,8 @@ $(document).ready(function() {
     function calculateAllIndicators() {
         // Calculate all Level 2 from Level 3
         const processedSubs = new Set();
-        $('.level3-assessment:checked').each(function() {
-            const subId = $(this).data('sub-id');
+        $('.level3-assessment').each(function() {
+            const subId = $(this).data('subsub-id'); // Corrected to use subsub-id
             if (!processedSubs.has(subId)) {
                 calculateLevel2(subId);
                 processedSubs.add(subId);
@@ -353,7 +333,7 @@ $(document).ready(function() {
 
         // Calculate all Main indicators
         const processedMains = new Set();
-        $('.sub-direct-assessment:checked, .sub-indicator-value').each(function() {
+        $('.sub-direct-assessment, .sub-indicator-value').each(function() {
             const mainId = $(this).data('main-id');
             if (mainId && !processedMains.has(mainId)) {
                 calculateMainIndicator(mainId);
@@ -363,31 +343,61 @@ $(document).ready(function() {
     }
 
     // Event handlers
-    $('.level3-assessment').change(function() {
+    $('.level3-assessment').on('input', function() {
         const subSubId = $(this).data('subsub-id');
         const subId = $(this).data('sub-id');
         const value = $(this).val();
+
+        // Validate input range
+        if (value !== '' && (value < 0 || value > 100)) {
+            alert('Nilai harus antara 0-100');
+            $(this).val('');
+            return;
+        }
 
         updateKeterangan(`ket-subsub-${subSubId}`, value);
         calculateLevel2(subId);
     });
 
-    $('.sub-direct-assessment').change(function() {
+    $('.sub-direct-assessment').on('input', function() {
         const subId = $(this).data('sub-id');
         const mainId = $(this).data('main-id');
         const value = $(this).val();
+
+        // Validate input range
+        if (value !== '' && (value < 0 || value > 100)) {
+            alert('Nilai harus antara 0-100');
+            $(this).val('');
+            return;
+        }
 
         updateKeterangan(`ket-sub-${subId}`, value);
         calculateMainIndicator(mainId);
     });
 
-    // Form submission with confirmation
+    // Form validation before submission
     $('#penilaianEditForm').on('submit', function(e) {
         e.preventDefault();
 
+        // Validate all numeric inputs
+        let isValid = true;
+        $('.sub-direct-assessment, .level3-assessment').each(function() {
+            const value = $(this).val();
+            if (value !== '' && (value < 0 || value > 100)) {
+                alert('Semua nilai harus antara 0-100');
+                $(this).focus();
+                isValid = false;
+                return false;
+            }
+        });
+
+        if (!isValid) {
+            return false;
+        }
+
         // Check for changes
         const changes = [];
-        $('.nilai-radio:checked').each(function() {
+        $('.sub-direct-assessment, .level3-assessment').each(function() {
             const name = $(this).attr('name');
             const currentValue = $(this).val();
             const originalValue = originalValues[name];
@@ -396,8 +406,8 @@ $(document).ready(function() {
                 const indicator = $(this).closest('tr').find('td:nth-child(2)').text().trim();
                 changes.push({
                     indicator: indicator,
-                    from: originalValue == 1 ? 'Ya' : 'Tidak',
-                    to: currentValue == 1 ? 'Ya' : 'Tidak'
+                    from: originalValue || 'Kosong',
+                    to: currentValue || 'Kosong'
                 });
             }
         });

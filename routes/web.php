@@ -126,7 +126,7 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::group(['middleware' => [RoleMiddleware::class . ':1,2,4,5']], function () {
         // Routes untuk penilaian
-        Route::get('penilaian', [PenilaianController::class, 'index'])->name('penilaian.index');
+
         Route::get('penilaian/data', [PenilaianController::class, 'getData'])->name('penilaian.data');
         Route::get('penilaian/create/{id_siswa}', [PenilaianController::class, 'create'])->name('penilaian.create');
         Route::post('penilaian', [PenilaianController::class, 'store'])->name('penilaian.store');
@@ -136,6 +136,10 @@ Route::group(['middleware' => ['auth']], function () {
         Route::delete('penilaian/{id_siswa}', [PenilaianController::class, 'destroy'])->name('penilaian.destroy');
         Route::get('penilaian/{id_siswa}/{id_ta}/{kelompok}/print', [PenilaianController::class, 'print'])->name('penilaian.print');
         Route::get('penilaian/dashboard', [PenilaianController::class, 'dashboard'])->name('penilaian.dashboard');
+    });
+
+    Route::group(['middleware' => [RoleMiddleware::class . ':1,2']], function () {
+        Route::get('penilaian', [PenilaianController::class, 'index'])->name('penilaian.index');
     });
 
 

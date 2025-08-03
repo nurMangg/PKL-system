@@ -1281,6 +1281,9 @@
                 ajax: {
                     url: "{{ route('pengajuan.surat.get') }}",
                     type: 'GET',
+                    data: function(d) {
+                        d.nis = '{{ $siswa->nis }}';
+                    }
                 },
                 columns: [{
                         data: 'DT_RowIndex',

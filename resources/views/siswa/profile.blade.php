@@ -375,21 +375,6 @@
                                             </div>
 
                                             <div class="mb-3">
-                                                <label for="tanggalMulai" class="form-label">Tahun Akademik</label>
-                                                <select class="form-select" id="id_ta" name="id_ta">
-                                                    <option value="">Pilih</option>
-                                                    @foreach ($ta as $item)
-                                                        @if ($item->id_ta == $activeAcademicYear->id_ta)
-                                                            <option value="{{ $item->id_ta }}" selected>{{ $item->tahun_akademik }}
-                                                                (aktif)
-                                                            </option>
-                                                        @else
-                                                            <option value="{{ $item->id_ta }}">{{ $item->tahun_akademik }}</option>
-                                                        @endif
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="mb-3">
                                                 <label for="tanggalMulai" class="form-label">Tanggal Mulai</label>
                                                 <input type="date" class="form-control" id="tanggalMulai"
                                                     name="tanggal_mulai" required min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}">

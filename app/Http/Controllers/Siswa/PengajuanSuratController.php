@@ -36,7 +36,6 @@ class PengajuanSuratController extends Controller
         'namaSiswa' => 'required', // Pastikan namaSiswa adalah array dengan minimal 4 item
         'namaSiswa.*' => 'required|string|max:255', // Validasi setiap elemen array
         'perusahaan_tujuan' => 'required|string|max:255',
-        'id_ta' => 'required|exists:thn_akademik,id_ta',
         'tanggal_mulai' => 'required|date',
         'tanggal_selesai' => 'required|date',
     ]);
@@ -48,7 +47,7 @@ class PengajuanSuratController extends Controller
     $pengajuan =Pengajuan::create([
         // 'jurusan' => Siswa::where('nis', $nama)->first()->jurusan->jurusan,
         'perusahaan_tujuan' => $request->perusahaan_tujuan,
-        'id_ta' => $request->id_ta,
+        'id_ta' => getActiveAcademicYear()->id_ta,
         'tanggal_pengajuan' => date('Y-m-d'),
         'tanggal_mulai' => $request->tanggal_mulai,
         'tanggal_selesai' => $request->tanggal_selesai,

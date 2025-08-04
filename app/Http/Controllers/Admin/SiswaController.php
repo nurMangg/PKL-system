@@ -345,7 +345,7 @@ class SiswaController extends Controller
         }
 
         // Tambahkan kondisi berdasarkan role user
-        if (Auth::user()->role == 2) {
+        if (in_array(Auth::user()->role, [2, 5])) {
             $siswaQuery = $siswaQuery->where('id_jurusan', session('id_jurusan'));
         }
 

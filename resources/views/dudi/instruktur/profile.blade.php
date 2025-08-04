@@ -306,6 +306,7 @@
                                     @csrf
                                     <input type="hidden" id="stt" name="stt" value="0">
                                     <input type="hidden" id="id_instruktur" name="id_instruktur" value="{{ $instruktur->id_instruktur }}">
+                                    <input type="hidden" id="id_ta" name="id_ta" value="{{ $activeAcademicYear->id_ta }}">
                                     <div class="mb-3">
                                         <table class="table table-bordered">
                                             <thead>
@@ -860,9 +861,9 @@
                         e.stopPropagation();
                     } else {
                         var url = "{{ route('d.instruktur.quesioner.upsert') }}";
-                        var formData = $(this).serialize();
-                        formData.id_ta = $('#id_ta').val();
-                        
+                        var formData = $(this).serializeArray();
+                        formData.push({ name: 'id_ta', value: $('#id_ta').val() });
+
                         $.ajax({
                             url: url,
                             method: "POST",

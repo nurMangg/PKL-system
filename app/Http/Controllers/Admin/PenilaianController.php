@@ -106,24 +106,51 @@ class PenilaianController extends Controller
                         ->where('is_active', 1)
                         ->first();
 
-                    if ($penilaian) {
+                    $penempatan = Penempatan::where('nis', $siswa->nis)->first();
+
+
+                    // Jika admin/superadmin hanya bisa melihat (Detail)
+                    if (in_array(auth()->user()->role, [1, 2])) {
+                        if ($penilaian) {
                         return '
-                            <a href="' . route('penilaian.show', $siswa->nis) . '" class="btn btn-info btn-sm">
-                                <i class="bi bi-eye"></i> Detail
-                            </a>
-                            <a href="' . route('penilaian.edit', $siswa->nis) . '" class="btn btn-warning btn-sm">
-                                <i class="bi bi-pencil"></i> Edit
-                            </a>
-                            <a href="' . url('penilaian/' . $siswa->nis . '/' . (request('id_ta', getActiveAcademicYear()->id_ta)) . '/' . (request('kelompok', $siswa->kelompok ?? 'all')) . '/print') . '" class="btn btn-secondary btn-sm" target="_blank">
-                                <i class="bi bi-printer"></i> Cetak
-                            </a>
+                            <a href="' . url('penilaian/' . $siswa->nis . '/' . (request('id_ta', getActiveAcademicYear()->id_ta)) . '/' . (request('kelompok', $penempatan->kelompok ?? 'all')) . '/print') . '" class="btn btn-secondary btn-sm" target="_blank">
+                                    <i class="bi bi-printer"></i> Cetak
+                                </a>
                         ';
-                    } else {
-                        return '
-                            <a href="' . route('penilaian.create', $siswa->nis) . '" class="btn btn-primary btn-sm">
-                                <i class="bi bi-pencil-square"></i> Nilai
-                            </a>
-                        ';
+                        } else {
+                            return '
+                                -
+                            ';
+                        }
+                    }
+                    // Jika instruktur (role 4) bisa Detail, Edit, Cetak, Lihat
+                    elseif (auth()->user()->role == 4) {
+                        if ($penilaian) {
+                            return '
+                                <a href="' . route('penilaian.show', $siswa->nis) . '" class="btn btn-info btn-sm">
+                                    <i class="bi bi-eye"></i> Detail
+                                </a>
+                                <a href="' . route('penilaian.edit', $siswa->nis) . '" class="btn btn-warning btn-sm">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </a>
+                                <a href="' . url('penilaian/' . $siswa->nis . '/' . (request('id_ta', getActiveAcademicYear()->id_ta)) . '/' . (request('kelompok', $penempatan->kelompok ?? 'all')) . '/print') . '" class="btn btn-secondary btn-sm" target="_blank">
+                                    <i class="bi bi-printer"></i> Cetak
+                                </a>
+                                <a href="' . route('penilaian.show', $siswa->nis) . '" class="btn btn-success btn-sm">
+                                    <i class="bi bi-eye"></i> Lihat
+                                </a>
+                            ';
+                        } else {
+                            return '
+                                <a href="' . route('penilaian.create', $siswa->nis) . '" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-pencil-square"></i> Nilai
+                                </a>
+                            ';
+                        }
+                    }
+                    // Untuk role lain, tidak ada action
+                    else {
+                        return '';
                     }
                 })
                 ->rawColumns(['status_penilaian', 'action'])
@@ -1403,6 +1430,8 @@ class PenilaianController extends Controller
                 ->where('is_active', 1)
                 ->whereNotNull('is_nilai')
                 ->get();
+
+            // dd($currentStudentPrgObsvr);
 
             // Attach assessment values to main indicators (only if we have real data)
             if ($mainIndicators->count() > 0 && $currentStudentPrgObsvr->count() > 0) {

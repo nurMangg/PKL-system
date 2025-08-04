@@ -117,7 +117,7 @@ class SiswaImport implements ToModel, WithHeadingRow, WithChunkReading, WithVali
             'nisn' => 'nullable|max:20',
             'nama' => 'required|max:100',
             'tempat_lahir' => 'nullable|max:100',
-            'tanggal_lahir' => 'nullable|date',
+            'tanggal_lahir' => 'nullable',
             'golongan' => 'nullable|max:5', // Changed from golongan_darah to golongan
             'gender' => 'nullable|in:L,P',
             'no_kontak' => 'nullable|max:20',

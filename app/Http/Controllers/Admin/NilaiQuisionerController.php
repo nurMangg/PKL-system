@@ -91,6 +91,7 @@ class NilaiQuisionerController extends Controller
                 'id_quesioner' => $idQuesioner,
                 'nilai' => $nilai,
                 'created_by' => Auth::id(),
+                'id_ta' => $request->id_ta,
             ];
 
             if ($isUpdate) {

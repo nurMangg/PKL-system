@@ -306,7 +306,6 @@
                                     @csrf
                                     <input type="hidden" id="stt" name="stt" value="0">
                                     <input type="hidden" id="id_instruktur" name="id_instruktur" value="{{ $instruktur->id_instruktur }}">
-                                    <input type="hidden" id="id_ta" name="id_ta" value="{{ $activeAcademicYear->id_ta }}">
                                     <div class="mb-3">
                                         <table class="table table-bordered">
                                             <thead>

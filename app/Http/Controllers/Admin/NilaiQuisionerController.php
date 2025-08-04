@@ -77,6 +77,7 @@ class NilaiQuisionerController extends Controller
         // Validasi data
         $request->validate([
             'tanggal' => 'required|date',
+            'id_ta' => 'required|exists:thn_akademik,id_ta',
             'id_instruktur' => 'required|exists:instruktur,id_instruktur',
             'quesioner' => 'required|array',
             'quesioner.*' => 'required|string|max:255',

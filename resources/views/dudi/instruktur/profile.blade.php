@@ -861,7 +861,8 @@
                     } else {
                         var url = "{{ route('d.instruktur.quesioner.upsert') }}";
                         var formData = $(this).serialize();
-
+                        formData.id_ta = $('#id_ta').val();
+                        
                         $.ajax({
                             url: url,
                             method: "POST",

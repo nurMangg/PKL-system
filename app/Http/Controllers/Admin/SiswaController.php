@@ -342,11 +342,32 @@ class SiswaController extends Controller
             $siswaQuery = $siswaQuery->whereHas('penempatan', function ($query) use ($id_ta) {
                 $query->where('id_ta', $id_ta);
             });
+            \Log::info('After penempatan filter count: ' . $siswaQuery->count());
         }
 
         // Tambahkan kondisi berdasarkan role user
-        if (in_array(Auth::user()->role, [2, 5])) {
-            $siswaQuery = $siswaQuery->where('id_jurusan', session('id_jurusan'));
+        // Hanya filter jika user adalah role 2 (admin jurusan) atau 5 (siswa)
+        if (Auth::check() && in_array(Auth::user()->role, [2, 5])) {
+            $sessionJurusan = session('id_jurusan');
+
+            // Jika role 2 (admin jurusan) dan session id_jurusan ada
+            if (Auth::user()->role == 2 && $sessionJurusan) {
+                $siswaQuery = $siswaQuery->where('id_jurusan', $sessionJurusan);
+            }
+            // Jika role 5 (siswa), ambil jurusan dari data siswa yang login dan exclude diri sendiri
+            else if (Auth::user()->role == 5) {
+                $siswaJurusan = Auth::user()->siswa->id_jurusan ?? null;
+                $currentNis = Auth::user()->siswa->nis ?? null;
+
+                if ($siswaJurusan) {
+                    $siswaQuery = $siswaQuery->where('id_jurusan', $siswaJurusan);
+                }
+
+                // Exclude siswa yang sedang login
+                if ($currentNis) {
+                    $siswaQuery = $siswaQuery->where('nis', '!=', $currentNis);
+                }
+            }
         }
 
         // Jika $k == 'presensi', ambil data siswa beserta instruktur dari relasi penempatan
@@ -357,6 +378,23 @@ class SiswaController extends Controller
         } else {
             $siswa = $siswaQuery->get(['nama', 'nis']); // Ambil hanya kolom yang diperlukan
         }
+
+
+        return response()->json($siswa);
+    }
+
+    // Test method untuk debugging
+    public function searchTest(Request $request)
+    {
+        $search = $request->input('q');
+
+        // Query sederhana tanpa filter role
+        $siswa = Siswa::where('is_active', true)
+            ->where(function ($query) use ($search) {
+                $query->where('nama', 'LIKE', "%{$search}%")
+                    ->orWhere('nis', 'LIKE', "%{$search}%");
+            })
+            ->get(['nama', 'nis']);
 
         return response()->json($siswa);
     }

@@ -346,6 +346,7 @@
                         return {
                             q: params.term,
                             k: 'penempatan',
+                            id_ta: $('#id_ta').val() // Tambahkan parameter id_ta
                         };
                     },
                     processResults: function(data) {

@@ -81,7 +81,8 @@ class AuthController extends Controller
             }else if (Auth::user()->role == 5) {
                 $nis = $user->siswa->nis ?? null;
                 $foto = $user->siswa->foto ?? null;
-                session(['nis' => $nis,'foto' => $foto]);
+                $id_jurusan = $user->siswa->id_jurusan ?? null;
+                session(['nis' => $nis,'foto' => $foto,'id_jurusan' => $id_jurusan]);
 
                 $request->session()->regenerate();
                 return redirect()->intended('d/siswa');

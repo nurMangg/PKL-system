@@ -8,7 +8,7 @@
     <nav>
         <ol class="breadcrumb">
             <li class="breadcrumb-item">PKL</li>
-            <li class="breadcrumb-item"><a href="{{ route('penilaian.index') }}">Penilaian</a></li>
+            <li class="breadcrumb-item"><a href="">Penilaian</a></li>
             <li class="breadcrumb-item active">Detail Penilaian</li>
         </ol>
     </nav>
@@ -24,7 +24,7 @@
                 <a href="{{ route('penilaian.edit', $siswa->nis) }}" class="btn btn-warning">
                     <i class="bi bi-pencil"></i> Edit Penilaian
                 </a>
-                <a href="{{ url('penilaian/' . $siswa->nis . '/' . ($penempatan->id_ta ?? '1') . '/' . ($siswa->kelompok ?? 'all') . '/print') }}" class="btn btn-primary" target="_blank">
+                <a href="{{ url('penilaian/' . $siswa->nis . '/' . ($penempatan->id_ta ?? '1') . '/' . ($penempatan->kelompok ?? 'all') . '/print') }}" class="btn btn-primary" target="_blank">
                     <i class="bi bi-printer"></i> Cetak Penilaian
                 </a>
             </div>
@@ -45,10 +45,10 @@
                         <th>Kelas</th>
                         <td>{{ $siswa->kelas ?? 'N/A' }}</td>
                     </tr>
-                    <tr>
+                    {{-- <tr>
                         <th>Judul Project PKL</th>
                         <td>{{ $projectpkl->projectpkl ?? 'N/A' }}</td>
-                    </tr>
+                    </tr> --}}
                 </table>
             </div>
             <div class="col-md-6">
@@ -87,54 +87,56 @@
                     @php $no = 1; @endphp
                     @foreach($mainIndicators as $mainIndicator)
                         {{-- Level 1 - Main Indicator --}}
-                        <tr class="table-primary">
+                        <tr class="">
                             <td><strong>{{ $no++ }}</strong></td>
                             <td>
                                 <strong>{{ $mainIndicator->indikator }}</strong>
                             </td>
                             <td class="text-center">
-                                @if($mainIndicator->penilaian)
-                                    <span class="badge bg-success fs-6">
-                                        {{ number_format($mainIndicator->penilaian->nilai_instruktur, 0) }}%
-                                    </span>
-                                @else
-                                    <span class="badge bg-secondary">-</span>
-                                @endif
+
                             </td>
                             <td>
-                                @if($mainIndicator->penilaian)
-                                    {{ getNilaiKeterangan($mainIndicator->penilaian->nilai_instruktur) }}
-                                @else
-                                    -
-                                @endif
+
                             </td>
                         </tr>
 
                         {{-- Level 2 - Sub Indicators --}}
                         @if($mainIndicator->children && $mainIndicator->children->count() > 0)
                             @foreach($mainIndicator->children as $subIndicator)
-                                <tr class="table-info">
+                                <tr class="">
                                     <td></td>
                                     <td class="ps-3">
                                         <span class="badge bg-info me-2">Level 2</span>
                                         {{ $subIndicator->indikator }}
                                     </td>
                                     <td class="text-center">
-                                        @if($subIndicator->is_nilai !== null)
-                                            <span class="badge bg-primary">{{ $subIndicator->is_nilai }}</span>
+                                        @if($subIndicator->level3Children && $subIndicator->level3Children->count() > 0)
+                                            {{-- Jika ada level 3, tidak tampilkan nilai di level 2 --}}
+                                            <span class="text-muted">-</span>
                                         @else
-                                            <span class="badge bg-secondary">-</span>
+                                            {{-- Jika tidak ada level 3, tampilkan nilai di level 2 --}}
+                                            @if($subIndicator->is_nilai !== null)
+                                                <span class="">{{ $subIndicator->is_nilai }}</span>
+                                            @else
+                                                <span class="">-</span>
+                                            @endif
                                         @endif
                                     </td>
                                     <td>
-                                        @if($subIndicator->is_nilai !== null)
-                                            @if($subIndicator->is_nilai >= 80)
-                                                <span class="text-success">Tercapai</span>
-                                            @else
-                                                <span class="text-danger">Tidak Tercapai</span>
-                                            @endif
+                                        @if($subIndicator->level3Children && $subIndicator->level3Children->count() > 0)
+                                            {{-- Jika ada level 3, tidak tampilkan keterangan di level 2 --}}
+                                            <span class="text-muted">-</span>
                                         @else
-                                            <span class="text-muted">Belum Dinilai</span>
+                                            {{-- Jika tidak ada level 3, tampilkan keterangan di level 2 --}}
+                                            @if($subIndicator->is_nilai !== null)
+                                                @if($subIndicator->is_nilai >= 80)
+                                                    <span class="">Tercapai</span>
+                                                @else
+                                                    <span class="">Tidak Tercapai</span>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">Belum Dinilai</span>
+                                            @endif
                                         @endif
                                     </td>
                                 </tr>
@@ -142,7 +144,7 @@
                                 {{-- Level 3 - Sub-Sub Indicators --}}
                                 @if($subIndicator->level3Children && $subIndicator->level3Children->count() > 0)
                                     @foreach($subIndicator->level3Children as $subSubIndicator)
-                                        <tr class="table-warning">
+                                        <tr class="">
                                             <td></td>
                                             <td class="ps-5">
                                                 <span class="badge bg-warning me-2">Level 3</span>
@@ -150,17 +152,17 @@
                                             </td>
                                             <td class="text-center">
                                                 @if($subSubIndicator->is_nilai !== null)
-                                                    <span class="badge bg-primary">{{ $subSubIndicator->is_nilai }}</span>
+                                                    <span class="">{{ $subSubIndicator->is_nilai }}</span>
                                                 @else
-                                                    <span class="badge bg-secondary">-</span>
+                                                    <span class="">-</span>
                                                 @endif
                                             </td>
                                             <td>
                                                 @if($subSubIndicator->is_nilai !== null)
                                                     @if($subSubIndicator->is_nilai >= 80)
-                                                        <span class="text-success">Tercapai</span>
+                                                        <span class="">Tercapai</span>
                                                     @else
-                                                        <span class="text-danger">Tidak Tercapai</span>
+                                                        <span class="">Tidak Tercapai</span>
                                                     @endif
                                                 @else
                                                     <span class="text-muted">Belum Dinilai</span>
@@ -177,35 +179,7 @@
         </div>
 
         <div class="row mt-4">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Ringkasan Nilai Main Indicator</h5>
-                        <table class="table table-sm">
-                            @foreach($mainIndicatorPenilaian as $penilaian)
-                                <tr>
-                                    <td>{{ $penilaian->prgObsvr->indikator ?? 'N/A' }}</td>
-                                    <td class="text-end">
-                                        <span class="badge bg-primary">
-                                            {{ number_format($penilaian->nilai_instruktur, 0) }}%
-                                        </span>
-                                    </td>
-                                </tr>
-                            @endforeach
-                            <tr class="table-primary">
-                                <th>Nilai Akhir (Rata-rata)</th>
-                                <th class="text-end">
-                                    <span class="badge bg-success fs-6">
-                                        {{ number_format($nilaiAkhir, 2) }}%
-                                    </span>
-                                </th>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-6">
+            <div class="col-md-12">
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Catatan Penilaian</h5>
@@ -215,7 +189,7 @@
                         <table class="table table-sm">
                             <tr>
                                 <th width="40%">Dinilai Oleh</th>
-                                <td>{{ $mainIndicatorPenilaian->first()->id_instruktur ?? 'N/A' }}</td>
+                                <td>{{ $penempatan->instruktur->nama ?? 'N/A' }}</td>
                             </tr>
                             <tr>
                                 <th>Tanggal Penilaian</th>

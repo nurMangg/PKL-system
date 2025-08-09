@@ -760,8 +760,16 @@ class PenilaianController extends Controller
 
             $tahunAkademik = ThnAkademik::where('is_active', 1)->first();
             if (!$tahunAkademik) {
-                return redirect()->route('penilaian.index')
-                    ->with('error', 'Tahun akademik aktif tidak ditemukan.');
+                if (Auth::user()->role == 4) {
+                    return redirect()->route('d.instruktur')
+                        ->with('error', 'Tahun akademik aktif tidak ditemukan.');
+                } else if (Auth::user()->role == 5) { // role siswa
+                    return redirect()->route('d.siswa')
+                        ->with('error', 'Tahun akademik aktif tidak ditemukan.');
+                } else {
+                    return redirect()->route('penilaian.index')
+                        ->with('error', 'Tahun akademik aktif tidak ditemukan.');
+                }
             }
 
             // Get main penilaian record (total score)
@@ -786,20 +794,49 @@ class PenilaianController extends Controller
 
             // Get all PrgObsvr records with hierarchical structure
             $mainIndicators = PrgObsvr::with(['children.level3Children'])
+                ->where('nis', $nis)
                 ->where('id_jurusan', $siswa->id_jurusan)
                 ->where('id_ta', $tahunAkademik->id_ta)
                 ->where('level', PrgObsvr::LEVEL_MAIN)
                 ->where('is_active', 1)
                 ->orderBy('id')
-                ->get();
+                ->get()
+                ->unique('indikator')
+                ->values()
+                ->take(4); // Limit to only 4 main indicators
 
             $penempatan = Penempatan::where('nis', $nis)
                 ->where('is_active', 1)
                 ->first();
 
-            // Attach penilaian data to main indicators
-            foreach ($mainIndicators as $main) {
-                $main->penilaian = $mainIndicatorPenilaian->where('id_prg_obsvr', $main->id)->first();
+            // Get current student's assessment data from PrgObsvr
+            $currentStudentPrgObsvr = PrgObsvr::where('id_jurusan', $siswa->id_jurusan)
+                ->where('id_ta', $tahunAkademik->id_ta)
+                ->where('nis', $nis)
+                ->where('is_active', 1)
+                ->whereNotNull('is_nilai')
+                ->get();
+
+            // Attach assessment values to all levels
+            foreach ($mainIndicators as $mainIndicator) {
+                // Attach main indicator assessment
+                $mainIndicator->penilaian = $mainIndicatorPenilaian->where('id_prg_obsvr', $mainIndicator->id)->first();
+
+                // Attach values to sub indicators
+                foreach ($mainIndicator->children as $subIndicator) {
+                    $subPrgObsvr = $currentStudentPrgObsvr->where('indikator', $subIndicator->indikator)->first();
+                    if ($subPrgObsvr) {
+                        $subIndicator->is_nilai = $subPrgObsvr->is_nilai;
+                    }
+
+                    // Attach values to sub-sub indicators
+                    foreach ($subIndicator->level3Children as $subSubIndicator) {
+                        $subSubPrgObsvr = $currentStudentPrgObsvr->where('indikator', $subSubIndicator->indikator)->first();
+                        if ($subSubPrgObsvr) {
+                            $subSubIndicator->is_nilai = $subSubPrgObsvr->is_nilai;
+                        }
+                    }
+                }
             }
 
             $nilaiAkhir = $mainPenilaian->nilai_instruktur ?? 0;
@@ -815,11 +852,20 @@ class PenilaianController extends Controller
                 'projectpkl'
             ));
 
+
         } catch (\Exception $e) {
             Log::error('Error in PenilaianController@show: ' . $e->getMessage());
 
-            return redirect()->route('penilaian.index')
-                ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            if (Auth::user()->role == 4) {
+                return redirect()->route('d.instruktur')
+                    ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            } else if (Auth::user()->role == 5) { // role siswa
+                return redirect()->route('d.siswa')
+                    ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            } else {
+                return redirect()->route('penilaian.index')
+                    ->with('error', self::MESSAGE_ERROR_GENERAL . $e->getMessage());
+            }
         }
     }
 
@@ -840,8 +886,16 @@ class PenilaianController extends Controller
             // Get current active academic year
             $tahunAkademik = ThnAkademik::where('is_active', 1)->first();
             if (!$tahunAkademik) {
-                return redirect()->route('penilaian.index')
-                    ->with('error', 'Tahun akademik aktif tidak ditemukan.');
+                if (Auth::user()->role == 4) {
+                    return redirect()->route('d.instruktur')
+                        ->with('error', 'Tahun akademik aktif tidak ditemukan.');
+                } else if (Auth::user()->role == 5) { // role siswa
+                    return redirect()->route('d.siswa')
+                        ->with('error', 'Tahun akademik aktif tidak ditemukan.');
+                } else {
+                    return redirect()->route('penilaian.index')
+                        ->with('error', 'Tahun akademik aktif tidak ditemukan.');
+                }
             }
 
             // Check if student has been assessed
@@ -891,7 +945,9 @@ class PenilaianController extends Controller
             }
 
             // Get existing assessment values from PrgObsvr
-            $existingValues = $this->getExistingAssessmentValues($siswa->id_jurusan, $tahunAkademik->id_ta);
+            $existingValuesData = $this->getExistingAssessmentValues($siswa->id_jurusan, $tahunAkademik->id_ta, $nis);
+            $existingValues = $existingValuesData['template_values'];
+            $valuesByIndicator = $existingValuesData['indicator_values'];
 
             // Get catatan from main penilaian record
             $catatanText = $mainPenilaian->catatan ?? '';
@@ -901,6 +957,7 @@ class PenilaianController extends Controller
                 'siswa',
                 'templates',
                 'existingValues',
+                'valuesByIndicator',
                 'catatanText',
                 'projectpkl'
             ));
@@ -923,18 +980,28 @@ class PenilaianController extends Controller
     /**
      * Get existing assessment values from PrgObsvr
      */
-    private function getExistingAssessmentValues($jurusanId, $tahunAkademikId)
+    private function getExistingAssessmentValues($jurusanId, $tahunAkademikId, $nis = null)
     {
-        $prgObsvrs = PrgObsvr::where('id_jurusan', $jurusanId)
+        $query = PrgObsvr::where('id_jurusan', $jurusanId)
             ->where('id_ta', $tahunAkademikId)
             ->where('is_active', 1)
-            ->whereNotNull('is_nilai') // Only get records that have assessment values
-            ->get();
+            ->whereNotNull('is_nilai'); // Only get records that have assessment values
+
+        // Filter by specific student if NIS is provided
+        if ($nis) {
+            $query->where('nis', $nis);
+        }
+
+        $prgObsvrs = $query->get();
 
         $values = [];
+        $valuesByIndicator = [];
 
         foreach ($prgObsvrs as $prgObsvr) {
-            // Find corresponding template item
+            // Create mapping by indikator name (same as print method)
+            $valuesByIndicator[$prgObsvr->indikator] = $prgObsvr->is_nilai;
+
+            // Find corresponding template item for backward compatibility
             $templateItem = TemplatePenilaianItem::where('indikator', $prgObsvr->indikator)
                 ->where('level', $prgObsvr->level)
                 ->where('is_active', 1)
@@ -945,7 +1012,11 @@ class PenilaianController extends Controller
             }
         }
 
-        return $values;
+        // Return both mappings
+        return [
+            'template_values' => $values,
+            'indicator_values' => $valuesByIndicator
+        ];
     }
 
     /**
@@ -1014,7 +1085,8 @@ class PenilaianController extends Controller
                 $request->input('nilai-sub', []),
                 $tahunAkademik->id_ta,
                 $siswa->id_jurusan,
-                $userId
+                $userId,
+                $siswa
             );
 
             // Step 3: Save updated main indicator assessments
@@ -1065,6 +1137,7 @@ class PenilaianController extends Controller
         PrgObsvr::where('id_jurusan', $jurusanId)
             ->where('id_ta', $tahunAkademikId)
             ->where('is_active', 1)
+            ->where('nis', $nis)
             ->update([
                 'is_active' => 0,
                 'updated_by' => $userId,
@@ -1228,12 +1301,12 @@ class PenilaianController extends Controller
             }
 
             // Get current assessment values
-            $currentValues = $this->getExistingAssessmentValues($siswa->id_jurusan, $tahunAkademik->id_ta);
+            $currentValues = $this->getExistingAssessmentValues($siswa->id_jurusan, $tahunAkademik->id_ta, $nis);
 
             // Compare with new values
             $changes = [];
             foreach ($newAssessmentData as $templateId => $newValue) {
-                $oldValue = $currentValues[$templateId] ?? null;
+                $oldValue = $currentValues['template_values'][$templateId] ?? null;
                 if ($oldValue !== null && $oldValue != $newValue) {
                     $templateItem = TemplatePenilaianItem::find($templateId);
                     if ($templateItem) {
@@ -1441,9 +1514,6 @@ class PenilaianController extends Controller
                         $prgObsvrRecord = $currentStudentPrgObsvr->where('indikator', $subIndicator->indikator)->first();
                         if ($prgObsvrRecord) {
                             $subIndicator->is_nilai = $prgObsvrRecord->is_nilai;
-                        } else {
-                            // If no record found, set a sample value for demonstration
-                            // $subIndicator->is_nilai = rand(70, 95);
                         }
 
                         // Also check level 3 children
@@ -1451,9 +1521,6 @@ class PenilaianController extends Controller
                             $level3PrgObsvrRecord = $currentStudentPrgObsvr->where('indikator', $level3Indicator->indikator)->first();
                             if ($level3PrgObsvrRecord) {
                                 $level3Indicator->is_nilai = $level3PrgObsvrRecord->is_nilai;
-                            } else {
-                                // If no record found, set a sample value for demonstration
-                                // $level3Indicator->is_nilai = rand(70, 95);
                             }
                         }
                     }
@@ -1485,11 +1552,10 @@ class PenilaianController extends Controller
             // Get assessment data for all students
             $assessmentData = [];
             foreach ($allStudents as $student) {
-                // Get sub-indicator assessment data from PrgObsvr for this student's jurusan and year
-                // Since Penilaian table only stores main indicators, we need to get sub-indicators from PrgObsvr
+                // Get sub-indicator and sub-sub-indicator assessment data from PrgObsvr for this student's jurusan and year
                 $studentPrgObsvr = PrgObsvr::where('id_jurusan', $siswa->id_jurusan)
                     ->where('id_ta', $yearToUse)
-                    ->where('level', PrgObsvr::LEVEL_SUB)
+                    ->whereIn('level', [PrgObsvr::LEVEL_SUB, PrgObsvr::LEVEL_SUB_SUB])
                     ->where('is_active', 1)
                     ->whereNotNull('is_nilai')
                     ->where('nis', $student->nis)

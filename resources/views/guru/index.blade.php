@@ -63,7 +63,7 @@
                         <div class="form-group mb-3">
                             <label for="role" class="form-label">Pilih Role</label>
                             <select class="form-select" id="role" name="role" required>
-                                <option value="1">Super Admin</option>
+                                {{-- <option value="1">Super Admin</option> --}}
                                 <option value="2">Admin</option>
                                 <option value="3">Guru</option>
                             </select>

@@ -122,7 +122,7 @@
                                                 @else
                                                     {{-- No Level 3, so this is assessed directly --}}
                                                     @php
-                                                        $currentValue = $existingValues[$subItem->id] ?? '';
+                                                        $currentValue = $existingValues[$subItem->id] ?? $valuesByIndicator[$subItem->indikator] ?? '';
                                                     @endphp
                                                     <input type="number"
                                                         class="form-control sub-direct-assessment"
@@ -143,7 +143,7 @@
                                         @if ($subItem->level3Children->isNotEmpty())
                                             @foreach ($subItem->level3Children as $subSubItem)
                                                 @php
-                                                    $currentValue = $existingValues[$subSubItem->id] ?? '';
+                                                    $currentValue = $existingValues[$subSubItem->id] ?? $valuesByIndicator[$subSubItem->indikator] ?? '';
                                                 @endphp
                                                 <tr>
                                                     <td></td>

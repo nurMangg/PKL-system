@@ -8,7 +8,11 @@
     <nav>
         <ol class="breadcrumb">
             <li class="breadcrumb-item">PKL</li>
-            <li class="breadcrumb-item"><a href="{{ route('penilaian.index') }}">Penilaian</a></li>
+            @if(auth()->user()->role == 4)
+                <li class="breadcrumb-item"><a href="{{ route('d.instruktur') }}">Penilaian</a></li>
+            @else
+                <li class="breadcrumb-item"><a href="{{ route('penilaian.index') }}">Penilaian</a></li>
+            @endif
             <li class="breadcrumb-item active">Edit Penilaian</li>
         </ol>
     </nav>

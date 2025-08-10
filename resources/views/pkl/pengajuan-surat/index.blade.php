@@ -69,7 +69,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="formPengajuan" class="row g-3 needs-validation" novalidate>
+                    <form id="formPengajuan" class="needs-validation" novalidate>
                         @csrf
                         <input type="hidden" id="pengajuanId" name="id">
                         <div class="mb-3">
@@ -86,41 +86,154 @@
                             </select>
                             <div class="invalid-feedback">Tahun Akademik wajib dipilih.</div>
                         </div>
-                        @for ($i = 1; $i <= 4; $i++)
-                            <div class="mb-3">
-                                <label for="namaSiswa{{ $i }}" class="form-label">Nama Siswa {{ $i }}</label>
-                                <select type="text" id="nis{{ $i }}" class="form-select" name="namaSiswa[]" required></select>
-                                <div class="invalid-feedback">Siswa wajib dipilih.</div>
+
+                        <div id="siswa-input-group">
+                            <div class="row mb-3 siswa-input-row align-items-center flex-nowrap">
+                                <div class="col-3 text-start">
+                                    <label for="nis1" class="form-label mb-0">Siswa 1</label>
+                                </div>
+                                <div class="col position-relative" style="min-width: 0">
+                                    <select id="nis1" class="form-select w-100 siswa-select"
+                                        style="max-width: 100%; overflow: hidden; text-overflow: ellipsis;"
+                                        name="namaSiswa[]" required>
+                                        <option value="">Pilih Siswa...</option>
+                                    </select>
+                                </div>
+                                <div class="col-auto ps-0">
+                                    <button type="button"
+                                        class="btn btn-success btn-sm add-siswa-btn d-flex align-items-center justify-content-center"
+                                        title="Tambah Siswa" style="width:32px; height:38px;">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                </div>
                             </div>
-                        @endfor
+                        </div>
+
                         <div class="mb-3">
                             <label for="perusahaan" class="form-label">Perusahaan Tujuan</label>
-                            <input type="text" class="form-control" id="perusahaan" name="perusahaan_tujuan" required>
-                            <div class="invalid-feedback">Perusahaan tujuan wajib diisi.</div>
+                            <div class="row g-2 align-items-center">
+                                <div class="col">
+                                    <select class="form-select w-100" id="perusahaan" name="perusahaan_tujuan" required>
+                                        <option value="">Pilih atau cari perusahaan...</option>
+                                        <!-- Opsi akan di-load via AJAX select2 -->
+                                    </select>
+                                </div>
+                                <div class="col-auto ps-0">
+                                    <button type="button"
+                                        class="btn btn-success d-flex align-items-center justify-content-center"
+                                        id="addPerusahaanBtn" title="Tambah Perusahaan"
+                                        style="width:38px; height:38px;">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="tanggalPengajuan" class="form-label">Tanggal Pengajuan</label>
-                            <input type="date" class="form-control" id="tanggalPengajuan" name="tanggal_pengajuan" required>
-                            <div class="invalid-feedback">Tanggal pengajuan wajib diisi.</div>
-                        </div>
+
                         <div class="mb-3">
                             <label for="tanggalMulai" class="form-label">Tanggal Mulai</label>
-                            <input type="date" class="form-control" id="tanggalMulai" name="tanggal_mulai" required>
+                            <input type="date" class="form-control" id="tanggalMulai" name="tanggal_mulai"
+                                required min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}">
                             <div class="invalid-feedback">Tanggal mulai wajib diisi.</div>
                         </div>
+
                         <div class="mb-3">
                             <label for="tanggalSelesai" class="form-label">Tanggal Selesai</label>
-                            <input type="date" class="form-control" id="tanggalSelesai" name="tanggal_selesai" required>
-                            <div class="invalid-feedback">Tanggal selesai wajib diisi.</div>
+                            <input type="date" class="form-control" id="tanggalSelesai" name="tanggal_selesai"
+                                required min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}">
+                            <div class="invalid-feedback" id="tanggalSelesaiFeedback">Tanggal selesai wajib diisi.</div>
                         </div>
-                        <div class="mb-3">
-                            <label for="kepadaYth" class="form-label">Kepada Yth</label>
-                            <input type="text" class="form-control" id="kepada_yth" name="kepada_yth" required>
-                            <div class="invalid-feedback">Kepada Yth wajib diisi.</div>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Simpan</button>
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                function validateTanggal() {
+                                    const mulai = document.getElementById('tanggalMulai').value;
+                                    const selesai = document.getElementById('tanggalSelesai').value;
+                                    const feedback = document.getElementById('tanggalSelesaiFeedback');
+                                    const selesaiInput = document.getElementById('tanggalSelesai');
+                                    if (mulai && selesai) {
+                                        const mulaiDate = new Date(mulai);
+                                        const selesaiDate = new Date(selesai);
+
+                                        // Calculate difference in months
+                                        let months = (selesaiDate.getFullYear() - mulaiDate.getFullYear()) * 12;
+                                        months += selesaiDate.getMonth() - mulaiDate.getMonth();
+
+                                        // If the end day is less than the start day, reduce a month
+                                        if (selesaiDate.getDate() < mulaiDate.getDate()) {
+                                            months -= 1;
+                                        }
+
+                                        if (months < 3 || months >= 4) {
+                                            selesaiInput.setCustomValidity("Tanggal selesai harus lebih dari 3 bulan dan kurang dari 4 bulan dari tanggal mulai.");
+                                            feedback.textContent = "Tanggal selesai harus lebih dari 3 bulan dan kurang dari 4 bulan dari tanggal mulai.";
+                                            feedback.style.display = "block";
+                                        } else {
+                                            selesaiInput.setCustomValidity("");
+                                            feedback.textContent = "Tanggal selesai wajib diisi.";
+                                            feedback.style.display = "";
+                                        }
+                                    } else {
+                                        selesaiInput.setCustomValidity("");
+                                        feedback.textContent = "Tanggal selesai wajib diisi.";
+                                        feedback.style.display = "";
+                                    }
+                                }
+
+                                document.getElementById('tanggalMulai').addEventListener('change', validateTanggal);
+                                document.getElementById('tanggalSelesai').addEventListener('change', validateTanggal);
+                            });
+                        </script>
+
+                        <button type="submit" class="btn btn-primary w-100">Simpan</button>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Perusahaan -->
+    <div class="modal fade" id="modalTambahPerusahaan" tabindex="-1" aria-labelledby="modalTambahPerusahaanLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTambahPerusahaanLabel">Tambah Perusahaan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formTambahPerusahaan">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="dudi_nama" class="form-label">Nama DUDI</label>
+                            <input type="text" class="form-control" id="dudi_nama" name="nama" required maxlength="30">
+                            <div class="invalid-feedback">Nama wajib diisi dan maksimal 30 karakter.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="dudi_nama_pimpinan" class="form-label">Nama Pimpinan</label>
+                            <input type="text" class="form-control" id="dudi_nama_pimpinan" name="nama_pimpinan" required maxlength="50">
+                            <div class="invalid-feedback">Nama wajib diisi dan maksimal 50 karakter.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="dudi_no_kontak" class="form-label">Nomor Kontak</label>
+                            <input type="number" class="form-control" id="dudi_no_kontak" name="no_kontak" required maxlength="14">
+                            <div class="invalid-feedback">Nomor kontak wajib diisi dan maksimal 14 karakter.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="dudi_alamat" class="form-label">Alamat</label>
+                            <textarea class="form-control" id="dudi_alamat" name="alamat" maxlength="100" required></textarea>
+                            <div class="invalid-feedback">Alamat maksimal 100 karakter.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="dudi_latitude" class="form-label">Latitude</label>
+                            <input type="text" class="form-control" id="dudi_latitude" name="latitude" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="dudi_longitude" class="form-label">Longitude</label>
+                            <input type="text" class="form-control" id="dudi_longitude" name="longitude" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -232,45 +345,239 @@
         });
 
         $(document).ready(function() {
-            for (let i = 1; i <= 4; i++) {
-                $(`#nis${i}`).select2({
-                    theme: 'bootstrap-5',
-                    dropdownParent: $("#pengajuanModal"),
-                    placeholder: 'Cari Siswa NIS/Nama...',
-                    minimumInputLength: 1,
-                    ajax: {
-                        url: "{{ route('siswa.search') }}",
-                        dataType: 'json',
-                        delay: 250,
-                        data: function(params) {
-                            return {
-                                q: params.term,
-                                k: 'penempatan',
-                                id_ta: $('#id_ta').val() // Tambahkan id_ta untuk filter
-                            };
-                        },
-                        processResults: function(data) {
-                            return {
-                                results: $.map(data, function(item) {
-                                    var txt = '';
-                                    var j = 0;
-                                    item.penempatan.forEach(el => {
-                                        if (el.id_ta == $('#id_ta').val()) {
-                                            j++;
-                                            txt = ` (Sudah di Tempatkan ${j}x)`;
-                                        }
-                                    });
-                                    return {
-                                        id: item.nis,
-                                        text: item.nis + ' - ' + item.nama + txt
+            // Initialize select2 for company selection
+            $('#perusahaan').select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $("#pengajuanModal"),
+                placeholder: 'Cari Perusahaan...',
+                minimumInputLength: 1,
+                ajax: {
+                    url: "{{ route('siswa.perusahaan.search') }}",
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return {
+                            q: params.term
+                        };
+                    },
+                    processResults: function(data) {
+                        return {
+                            results: $.map(data.results, function(item) {
+                                return {
+                                    id: item.id_dudi,
+                                    text: item.text
+                                }
+                            })
+                        };
+                    },
+                    cache: true
+                }
+            });
+
+            // Initialize select2 for first student
+            $('#nis1').select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $("#pengajuanModal"),
+                placeholder: 'Cari Siswa NIS/Nama...',
+                minimumInputLength: 1,
+                ajax: {
+                    url: "{{ route('siswa.search') }}",
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return {
+                            q: params.term,
+                            id_ta: $('#id_ta').val()
+                        };
+                    },
+                    processResults: function(data) {
+                        return {
+                            results: $.map(data, function(item) {
+                                var txt = '';
+                                var j = 0;
+                                item.penempatan.forEach(el => {
+                                    if (el.id_ta == $('#id_ta').val()) {
+                                        j++;
+                                        txt = ` (Sudah di Tempatkan ${j}x)`;
                                     }
-                                })
-                            };
-                        },
-                        cache: true
+                                });
+                                return {
+                                    id: item.nis,
+                                    text: item.nis + ' - ' + item.nama + txt
+                                }
+                            })
+                        };
+                    },
+                    cache: true
+                }
+            });
+
+            // Dynamic student input functionality
+            let studentCount = 1;
+
+            $(document).on('click', '.add-siswa-btn', function() {
+                if (studentCount < 4) {
+                    studentCount++;
+                    const newRow = `
+                        <div class="row mb-3 siswa-input-row align-items-center flex-nowrap">
+                            <div class="col-3 text-start">
+                                <label class="form-label mb-0">Siswa ${studentCount}</label>
+                            </div>
+                            <div class="col position-relative" style="min-width: 0">
+                                <select class="form-select w-100 siswa-select"
+                                    style="max-width: 100%; overflow: hidden; text-overflow: ellipsis;"
+                                    name="namaSiswa[]" required>
+                                    <option value="">Pilih Siswa...</option>
+                                </select>
+                            </div>
+                            <div class="col-auto ps-0">
+                                <button type="button"
+                                    class="btn btn-danger btn-sm remove-siswa-btn d-flex align-items-center justify-content-center"
+                                    title="Hapus Siswa" style="width:32px; height:38px;">
+                                    <i class="bi bi-dash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    $('#siswa-input-group').append(newRow);
+
+                    // Initialize select2 for new student input
+                    const newSelect = $('#siswa-input-group .siswa-input-row:last-child .siswa-select');
+                    newSelect.select2({
+                        theme: 'bootstrap-5',
+                        dropdownParent: $("#pengajuanModal"),
+                        placeholder: 'Cari Siswa NIS/Nama...',
+                        minimumInputLength: 1,
+                        ajax: {
+                            url: "{{ route('siswa.search') }}",
+                            dataType: 'json',
+                            delay: 250,
+                            data: function(params) {
+                                return {
+                                    q: params.term,
+                                    k: 'penempatans',
+                                    id_ta: $('#id_ta').val()
+                                };
+                            },
+                            processResults: function(data) {
+                                return {
+                                    results: $.map(data, function(item) {
+                                        var txt = '';
+                                        var j = 0;
+                                        item.penempatan.forEach(el => {
+                                            if (el.id_ta == $('#id_ta').val()) {
+                                                j++;
+                                                txt = ` (Sudah di Tempatkan ${j}x)`;
+                                            }
+                                        });
+                                        return {
+                                            id: item.nis,
+                                            text: item.nis + ' - ' + item.nama + txt
+                                        }
+                                    })
+                                };
+                            },
+                            cache: true
+                        }
+                    });
+                }
+            });
+
+            $(document).on('click', '.remove-siswa-btn', function() {
+                $(this).closest('.siswa-input-row').remove();
+                studentCount--;
+                // Update labels
+                $('#siswa-input-group .siswa-input-row').each(function(index) {
+                    $(this).find('label').text(`Siswa ${index + 1}`);
+                });
+            });
+
+            // Add company functionality
+            $('#addPerusahaanBtn').on('click', function() {
+                $('#modalTambahPerusahaan').modal('show');
+            });
+
+            $('#formTambahPerusahaan').on('submit', function(e) {
+                e.preventDefault();
+                var form = $(this);
+                var btn = form.find('button[type="submit"]');
+                btn.prop('disabled', true).text('Menyimpan...');
+
+                $.ajax({
+                    url: "{{ route('dudi.store') }}",
+                    method: 'POST',
+                    data: form.serialize(),
+                    success: function(response) {
+                        $('#modalTambahPerusahaan').modal('hide');
+                        form[0].reset();
+                        btn.prop('disabled', false).text('Simpan');
+
+                        // Refresh company select
+                        $('#perusahaan').empty().append('<option value="">Pilih atau cari perusahaan...</option>');
+                        $('#perusahaan').select2('destroy');
+                        $('#perusahaan').select2({
+                            theme: 'bootstrap-5',
+                            dropdownParent: $("#pengajuanModal"),
+                            placeholder: 'Cari Perusahaan...',
+                            minimumInputLength: 1,
+                            ajax: {
+                                url: "{{ route('siswa.perusahaan.search') }}",
+                                dataType: 'json',
+                                delay: 250,
+                                data: function(params) {
+                                    return {
+                                        q: params.term
+                                    };
+                                },
+                                processResults: function(data) {
+                                    return {
+                                        results: $.map(data, function(item) {
+                                            return {
+                                                id: item.id_dudi,
+                                                text: item.nama + ' - ' + item.alamat
+                                            }
+                                        })
+                                    };
+                                },
+                                cache: true
+                            }
+                        });
+
+                        Toast.fire({
+                            icon: "success",
+                            title: "Perusahaan berhasil ditambahkan"
+                        });
+                    },
+                    error: function(xhr) {
+                        btn.prop('disabled', false).text('Simpan');
+                        if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                            // Show validation errors
+                            for (const [field, messages] of Object.entries(xhr.responseJSON.errors)) {
+                                var input = form.find('[name="' + field + '"]');
+                                input.addClass('is-invalid');
+                                input.next('.invalid-feedback').show().text(messages[0]);
+                            }
+                        } else {
+                            Toast.fire({
+                                icon: "error",
+                                title: "Gagal menambahkan perusahaan"
+                            });
+                        }
                     }
                 });
-            }
+            });
+
+            // Reset form when modal is closed
+            $('#pengajuanModal').on('hidden.bs.modal', function() {
+                $('#formPengajuan')[0].reset();
+                $('#pengajuanId').val('');
+                // Remove additional student rows
+                $('#siswa-input-group .siswa-input-row:not(:first)').remove();
+                studentCount = 1;
+                // Reset select2
+                $('#perusahaan').val('').trigger('change');
+                $('#nis1').val('').trigger('change');
+            });
         });
 
         // Buton ditolak/disetujui
@@ -656,14 +963,94 @@
             $.get("{{ route('pengajuan.surat.edit', '') }}/" + id, function(data) {
                 $('#pengajuanModalLabel').text("Edit Pengajuan");
                 $('#pengajuanId').val(data.id);
-                $('#jurusan').val(data.jurusan);
-                $('#perusahaan').val(data.perusahaan_tujuan);
-                $('#tanggalPengajuan').val(data.tanggal_pengajuan);
+                $('#id_ta').val(data.id_ta).trigger('change');
 
-                // Set nama siswa
-                data.nama_siswa.forEach((nama, index) => {
-                    $(`#namaSiswa${index + 1}`).val(nama);
-                });
+                // Reset student inputs
+                $('#siswa-input-group .siswa-input-row:not(:first)').remove();
+                studentCount = 1;
+
+                // Set first student
+                if (data.nama_siswa && data.nama_siswa.length > 0) {
+                    $('#nis1').val(data.nama_siswa[0]).trigger('change');
+
+                    // Add additional students if any
+                    for (let i = 1; i < data.nama_siswa.length; i++) {
+                        if (studentCount < 4) {
+                            studentCount++;
+                            const newRow = `
+                                <div class="row mb-3 siswa-input-row align-items-center flex-nowrap">
+                                    <div class="col-3 text-start">
+                                        <label class="form-label mb-0">Siswa ${studentCount}</label>
+                                    </div>
+                                    <div class="col position-relative" style="min-width: 0">
+                                        <select class="form-select w-100 siswa-select"
+                                            style="max-width: 100%; overflow: hidden; text-overflow: ellipsis;"
+                                            name="namaSiswa[]" required>
+                                            <option value="">Pilih Siswa...</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-auto ps-0">
+                                        <button type="button"
+                                            class="btn btn-danger btn-sm remove-siswa-btn d-flex align-items-center justify-content-center"
+                                            title="Hapus Siswa" style="width:32px; height:38px;">
+                                            <i class="bi bi-dash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                            $('#siswa-input-group').append(newRow);
+
+                            // Initialize select2 for new student input
+                            const newSelect = $('#siswa-input-group .siswa-input-row:last-child .siswa-select');
+                            newSelect.select2({
+                                theme: 'bootstrap-5',
+                                dropdownParent: $("#pengajuanModal"),
+                                placeholder: 'Cari Siswa NIS/Nama...',
+                                minimumInputLength: 1,
+                                ajax: {
+                                    url: "{{ route('siswa.search') }}",
+                                    dataType: 'json',
+                                    delay: 250,
+                                    data: function(params) {
+                                        return {
+                                            q: params.term,
+                                            k: 'penempatans',
+                                            id_ta: $('#id_ta').val()
+                                        };
+                                    },
+                                    processResults: function(data) {
+                                        return {
+                                            results: $.map(data, function(item) {
+                                                var txt = '';
+                                                var j = 0;
+                                                item.penempatan.forEach(el => {
+                                                    if (el.id_ta == $('#id_ta').val()) {
+                                                        j++;
+                                                        txt = ` (Sudah di Tempatkan ${j}x)`;
+                                                    }
+                                                });
+                                                return {
+                                                    id: item.nis,
+                                                    text: item.nis + ' - ' + item.nama + txt
+                                                }
+                                            })
+                                        };
+                                    },
+                                    cache: true
+                                }
+                            });
+
+                            // Set value for this student
+                            setTimeout(() => {
+                                newSelect.val(data.nama_siswa[i]).trigger('change');
+                            }, 100);
+                        }
+                    }
+                }
+
+                $('#perusahaan').val(data.perusahaan_tujuan).trigger('change');
+                $('#tanggalMulai').val(data.tanggal_mulai);
+                $('#tanggalSelesai').val(data.tanggal_selesai);
 
                 $('#pengajuanModal').modal('show');
             });
@@ -674,6 +1061,12 @@
             $('#pengajuanModalLabel').text("Tambah Pengajuan");
             $('#formPengajuan')[0].reset();
             $('#pengajuanId').val('');
+            // Reset select2
+            $('#perusahaan').val('').trigger('change');
+            $('#nis1').val('').trigger('change');
+            // Remove additional student rows
+            $('#siswa-input-group .siswa-input-row:not(:first)').remove();
+            studentCount = 1;
         }
     </script>
 @endsection
@@ -682,4 +1075,45 @@
     <link href="{{ asset('assets') }}/vendor/dataTables/dataTables.bootstrap5.css" rel="stylesheet">
     <link href="{{ asset('assets') }}/vendor/select2/css/select2.min.css" rel="stylesheet">
     <link href="{{ asset('assets') }}/vendor/select2/css/select2-bootstrap-5-theme.min.css" rel="stylesheet">
+    <style>
+        .siswa-input-row {
+            transition: all 0.3s ease;
+        }
+
+        .siswa-input-row:hover {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 5px;
+        }
+
+        .add-siswa-btn, .remove-siswa-btn {
+            transition: all 0.2s ease;
+        }
+
+        .add-siswa-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .remove-siswa-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .form-select.siswa-select {
+            min-height: 38px;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection {
+            min-height: 38px;
+        }
+
+        .modal-dialog {
+            max-width: 600px;
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            border-radius: 0.2rem;
+        }
+    </style>
 @endsection

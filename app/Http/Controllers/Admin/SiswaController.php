@@ -338,7 +338,7 @@ class SiswaController extends Controller
             });
 
         // Filter berdasarkan tahun akademik jika ada
-        if ($id_ta && $key === 'penempatan') {
+        if ($id_ta && $key === 'penempatans') {
             $siswaQuery = $siswaQuery->whereHas('penempatan', function ($query) use ($id_ta) {
                 $query->where('id_ta', $id_ta);
             });

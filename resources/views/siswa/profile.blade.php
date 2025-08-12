@@ -1518,9 +1518,28 @@
                         });
                     },
                     error: function(xhr) {
-                        if (xhr.responseJSON && xhr.responseJSON.errors) {
-                            // Tampilkan error pada console untuk debug
-                            console.error(xhr.responseJSON.errors);
+                        // Cek jika error logic (misal status error/message dari backend)
+                        if (xhr.responseJSON) {
+                            if (xhr.responseJSON.status === 'error' && xhr.responseJSON.message) {
+                                Toast.fire({
+                                    icon: "error",
+                                    title: xhr.responseJSON.message
+                                });
+                                return;
+                            }
+                            if (xhr.responseJSON.errors) {
+                                // Tampilkan error pada console untuk debug
+                                console.error(xhr.responseJSON.errors);
+                                // Tampilkan error validasi ke user (opsional: tampilkan semua pesan error)
+                                let messages = Object.values(xhr.responseJSON.errors).map(function(msgArr) {
+                                    return msgArr.join('<br>');
+                                }).join('<br>');
+                                Toast.fire({
+                                    icon: "error",
+                                    title: messages || "Terjadi kesalahan validasi"
+                                });
+                                return;
+                            }
                         }
                         Toast.fire({
                             icon: "error",

@@ -44,6 +44,25 @@ class PengajuanSuratController extends Controller
         return response()->json(['status' => 'error', 'errors' => $validator->errors()], 422);
     }
 
+
+    // Cek setiap siswa apakah sudah ada penempatan di perusahaan tujuan
+    foreach ($request->namaSiswa as $nama) {
+        $sudahMengajukan = PengajuanDetail::where('nis', $nama)
+            ->whereHas('pengajuan', function($query) use ($request) {
+                $query->where('perusahaan_tujuan', $request->perusahaan_tujuan)
+                      ->where('status', '!=', 'Ditolak');
+            })
+            ->exists();
+
+        if ($sudahMengajukan) {
+            $siswa = Siswa::where('nis', $nama)->first();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Siswa ' . ($siswa ? $siswa->nama : $nama) . ' sudah mengajukan surat ke perusahaan tujuan yang sama.'
+            ], 422);
+        }
+    }
+
     $pengajuan =Pengajuan::create([
         // 'jurusan' => Siswa::where('nis', $nama)->first()->jurusan->jurusan,
         'perusahaan_tujuan' => $request->perusahaan_tujuan,

@@ -21,7 +21,7 @@
                 <h5>Data Nilai Kuesioner</h5>
                 <div>
                     {{-- <button class="btn btn-primary btn-sm" id="btnAdd"><i class="bi bi-plus-circle"></i> Tambah</button> --}}
-                    <button class="btn btn-danger btn-sm" id="btnDownload"><i class="bi bi-download"></i> Download</button>
+                    {{-- <button class="btn btn-danger btn-sm" id="btnDownload"><i class="bi bi-download"></i> Download</button> --}}
                 </div>
             </div>
         </div>

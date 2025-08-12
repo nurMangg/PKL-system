@@ -164,33 +164,35 @@
 
                         <!-- Body -->
                         <div class="modal-body">
-                            <form>
-                            <div class="mb-3">
-                                <label for="nis" class="form-label">Nama Siswa</label>
-                                <input type="text" class="form-control" id="nis" placeholder="Masukkan nama siswa">
-
-
-                            </div>
-                            <div class="mb-3">
-                                <label for="tanggal_absensi" class="form-label">Tanggal</label>
-                                <input type="date" class="form-control" id="tanggal_absensi">
-                            </div>
-                            <div class="mb-3">
-                                <label for="keterangan" class="form-label">Keterangan</label>
-                                <select class="form-select" id="keterangan">
-                                <option selected disabled>Pilih keterangan</option>
-                                <option value="izin">Izin</option>
-                                <option value="sakit">Sakit</option>
-                                <option value="alpa">Alpa</option>
-                                </select>
-                            </div>
+                            <form id="absensiForm">
+                                @csrf
+                                <div class="mb-3">
+                                    <label for="nis" class="form-label">Nama Siswa</label>
+                                    <select class="form-control" id="nis" name="nis" required>
+                                        <option value="">Pilih siswa...</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="tanggal_absensi" class="form-label">Tanggal</label>
+                                    <input type="date" class="form-control" id="tanggal_absensi" name="tanggal_absensi" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="keterangan" class="form-label">Keterangan</label>
+                                    <select class="form-select" id="keterangan" name="keterangan" required>
+                                        <option value="">Pilih keterangan</option>
+                                        <option value="Hadir">Hadir</option>
+                                        <option value="Izin">Izin</option>
+                                        <option value="Sakit">Sakit</option>
+                                        <option value="Alpha">Alpha</option>
+                                    </select>
+                                </div>
                             </form>
                         </div>
 
                         <!-- Footer -->
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                            <button type="submit" class="btn btn-success">Simpan Absensi</button>
+                            <button type="button" class="btn btn-success" id="btnSimpanAbsensi">Simpan Absensi</button>
                         </div>
 
                         </div>
@@ -818,7 +820,7 @@
 
                 $('#nis').select2({
                     theme: 'bootstrap-5',
-                    dropdownParent: $("#pengajuanModal"),
+                    dropdownParent: $("#absensiModal"),
                     placeholder: 'Cari Siswa NIS/Nama...',
                     minimumInputLength: 1,
                     ajax: {
@@ -853,42 +855,139 @@
                     }
                 });
 
+                // Initialize Select2 for attendance form student selection
+                $('#absensiModal').on('shown.bs.modal', function() {
+                    $('#nis').select2({
+                        theme: 'bootstrap-5',
+                        dropdownParent: $("#absensiModal"),
+                        placeholder: 'Cari Siswa NIS/Nama...',
+                        minimumInputLength: 1,
+                        ajax: {
+                            url: "{{ route('siswa.searchh') }}",
+                            dataType: 'json',
+                            delay: 250,
+                            data: function(params) {
+                                return {
+                                    q: params.term,
+                                    k: 'penempatan',
+                                };
+                            },
+                            processResults: function(data) {
+                                return {
+                                    results: $.map(data, function(item) {
+                                        var txt = '';
+                                        var j = 0;
+                                        item.penempatan.forEach(el => {
+                                            if (el.id_ta == $('#id_ta').val()) {
+                                                j++;
+                                                txt = ` (Sudah di Tempatkan ${j}x)`;
+                                            }
+                                        });
+                                        return {
+                                            id: item.nis,
+                                            text: item.nis + ' - ' + item.nama + txt // Tampilkan data siswa
+                                        }
+                                    })
+                                };
+                            },
+                            cache: true
+                        }
+                    });
+                });
+
+                // Handle attendance form submission
+                $('#btnSimpanAbsensi').on('click', function() {
+                    var form = $('#absensiForm')[0];
+                    if (form.checkValidity() === false) {
+                        form.reportValidity();
+                        return;
+                    }
+
+                    var formData = $('#absensiForm').serializeArray();
+                    formData.push({ name: 'id_ta', value: $('#id_ta').val() });
+                    formData.push({ name: 'id_instruktur', value: '{{ $instruktur->id_instruktur }}' });
+
+                    $.ajax({
+                        url: "{{ route('d.instruktur.siswa.absensi.store') }}",
+                        method: "POST",
+                        data: formData,
+                        success: function(response) {
+                            if (response.status === 'success') {
+                                $('#absensiModal').modal('hide');
+                                $('#absensiForm')[0].reset();
+                                $('#nis').val('').trigger('change');
+
+                                // Reload attendance table if it exists
+                                if (typeof table2 !== 'undefined') {
+                                    table2.ajax.reload();
+                                }
+
+                                Toast.fire({
+                                    icon: "success",
+                                    title: response.message || "Absensi berhasil disimpan"
+                                });
+                            } else {
+                                Toast.fire({
+                                    icon: "error",
+                                    title: response.message || "Gagal menyimpan absensi"
+                                });
+                            }
+                        },
+                        error: function(xhr) {
+                            console.error('Error:', xhr);
+                            Toast.fire({
+                                icon: "error",
+                                title: 'Terjadi kesalahan saat menyimpan absensi'
+                            });
+                        }
+                    });
+                });
+
                 $('#questionForm').on('submit', function(e) {
                     e.preventDefault();
                     var form = $(this)[0];
                     if (form.checkValidity() === false) {
-                        e.stopPropagation();
-                    } else {
-                        var url = "{{ route('d.instruktur.quesioner.upsert') }}";
-                        var formData = $(this).serializeArray();
-                        formData.push({ name: 'id_ta', value: $('#id_ta').val() });
+                        form.reportValidity();
+                        return;
+                    }
+                    var formData = $(this).serializeArray();
+                    formData.push({ name: 'id_ta', value: $('#id_ta').val() });
+                    formData.push({ name: 'id_instruktur', value: '{{ $instruktur->id_instruktur }}' });
 
-                        $.ajax({
-                            url: url,
-                            method: "POST",
-                            data: formData,
-                            success: function(response) {
-                                getNilaiQuestion();
-                                if (response.status) {
-                                    Toast.fire({
-                                        icon: "success",
-                                        title: response.message
-                                    });
-                                } else {
-                                    Toast.fire({
-                                        icon: "error",
-                                        title: response.message
-                                    });
-                                }
-                            },
-                            error: function(response) {
+                    $.ajax({
+                        url: "{{ route('d.instruktur.quesioner.upsert') }}",
+                        method: "POST",
+                        data: formData,
+                        success: function(response) {
+                            if (response.status === 'success') {
+                                Toast.fire({
+                                    icon: "success",
+                                    title: response.message || "Quesioner berhasil disimpan"
+                                });
+                                window.location.reload();
+                            } else {
                                 Toast.fire({
                                     icon: "error",
-                                    title: 'Woops! Fatal Error.'
+                                    title: response.message || "Gagal menyimpan quesioner"
                                 });
                             }
-                        });
-                    }
+                        },
+                        error: function(xhr) {
+                            console.error('Error:', xhr);
+                            Toast.fire({
+                                icon: "error",
+                                title: 'Terjadi kesalahan saat menyimpan quesioner'
+                            });
+                        }
+
+                    });
+
+                });
+
+                // Reset form when modal is hidden
+                $('#absensiModal').on('hidden.bs.modal', function() {
+                    $('#absensiForm')[0].reset();
+                    $('#nis').val('').trigger('change');
                 });
 
                 // Handle password change submission

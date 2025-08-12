@@ -397,4 +397,64 @@ class ProfilInstrukturController extends Controller
 
             return response()->json(['success' => true, 'message' => 'Keterangan berhasil diupdate']);
         }
+
+        public function store_absensi(Request $request)
+        {
+            try {
+                // Validasi input
+                $request->validate([
+                    'nis' => 'required|exists:siswa,nis',
+                    'tanggal_absensi' => 'required|date',
+                    'keterangan' => 'required|in:Hadir,Izin,Sakit,Alpha',
+                    'id_ta' => 'required|exists:tahun_akademik,id_ta',
+                    'id_instruktur' => 'required|exists:instruktur,id_instruktur'
+                ]);
+
+                // Cek apakah siswa ditempatkan pada instruktur dan tahun akademik yang sesuai
+                $penempatan = Penempatan::where('nis', $request->nis)
+                    ->where('id_instruktur', $request->id_instruktur)
+                    ->where('id_ta', $request->id_ta)
+                    ->where('is_active', true)
+                    ->first();
+
+                if (!$penempatan) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Siswa tidak ditempatkan pada instruktur ini untuk tahun akademik yang dipilih'
+                    ], 400);
+                }
+
+                // Cek apakah sudah ada absensi untuk siswa dan tanggal yang sama
+                $existingAbsensi = Presensi::where('id_penempatan', $penempatan->id_penempatan)
+                    ->where('tanggal', $request->tanggal_absensi)
+                    ->first();
+
+                if ($existingAbsensi) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Absensi untuk siswa ini pada tanggal tersebut sudah ada'
+                    ], 400);
+                }
+
+                // Buat absensi baru
+                $presensi = new Presensi();
+                $presensi->tanggal = $request->tanggal_absensi;
+                $presensi->keterangan = $request->keterangan;
+                $presensi->id_penempatan = $penempatan->id_penempatan;
+                $presensi->is_active = true;
+                $presensi->created_by = Auth::id();
+                $presensi->save();
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Absensi berhasil disimpan'
+                ]);
+
+            } catch (\Exception $e) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                ], 500);
+            }
+        }
 }

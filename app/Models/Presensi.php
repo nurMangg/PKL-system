@@ -31,6 +31,7 @@ class Presensi extends Model
         'is_acc_instruktur',
         'is_acc_guru',
         'catatan',
+        'keterangan',
         'created_by',
         'updated_by',
         'is_active',

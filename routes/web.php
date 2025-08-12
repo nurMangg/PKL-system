@@ -314,6 +314,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/quesioner', 'get_quesioner')->name('d.instruktur.quesioner');
         Route::post('/quesioner/upsert', 'upsert_quesioner')->name('d.instruktur.quesioner.upsert');
         Route::get('/quesioner/edit/{id_instruktur}/{id_ta}', 'edit_quesioner')->name('d.instruktur.quesioner.edit');
+        Route::post('/siswa/absensi/store', 'store_absensi')->name('d.instruktur.siswa.absensi.store');
+
     });
 
     // dudi

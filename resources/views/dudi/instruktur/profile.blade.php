@@ -875,13 +875,17 @@
                                 };
                             },
                             processResults: function(data) {
-                                return {
-                                    results: $.map(data, function(item) {
+                                var results = [];
+                                if (data && data.results) {
+                                    results = $.map(data.results, function(item) {
                                         return {
                                             id: item.nis,
-                                            text: item.nis + ' - ' + item.nama  // Tampilkan data siswa
+                                            text: item.nis + ' - ' + item.nama
                                         }
-                                    })
+                                    });
+                                }
+                                return {
+                                    results: results
                                 };
                             },
                             cache: true

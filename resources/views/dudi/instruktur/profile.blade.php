@@ -830,25 +830,25 @@
                         data: function(params) {
                             return {
                                 q: params.term,
+                                id_instruktur: '{{ $instruktur->id_instruktur }}',
+                                id_ta: $('#id_ta').val(),
                                 k: 'penempatan',
                             };
                         },
                         processResults: function(data) {
-                            return {
-                                results: $.map(data, function(item) {
-                                    var txt = '';
-                                    var j = 0;
-                                    item.penempatan.forEach(el => {
-                                        if (el.id_ta == $('#id_ta').val()) {
-                                            j++;
-                                            txt = ` (Sudah di Tempatkan ${j}x)`;
-                                        }
-                                    });
+                            // Adapt to the new API response structure from SearchController@searchSiswaInPenempatan
+                            // which returns { results: [...] }
+                            var results = [];
+                            if (data && data.results) {
+                                results = $.map(data.results, function(item) {
                                     return {
                                         id: item.nis,
-                                        text: item.nis + ' - ' + item.nama + txt // Tampilkan data siswa
+                                        text: item.nis + ' - ' + item.nama
                                     }
-                                })
+                                });
+                            }
+                            return {
+                                results: results
                             };
                         },
                         cache: true
@@ -863,29 +863,23 @@
                         placeholder: 'Cari Siswa NIS/Nama...',
                         minimumInputLength: 1,
                         ajax: {
-                            url: "{{ route('siswa.searchh') }}",
+                            url: "{{ route('siswa.searchh.penempatan') }}",
                             dataType: 'json',
                             delay: 250,
                             data: function(params) {
                                 return {
                                     q: params.term,
+                                    id_instruktur: '{{ $instruktur->id_instruktur }}',
+                                    id_ta: $('#id_ta').val(),
                                     k: 'penempatan',
                                 };
                             },
                             processResults: function(data) {
                                 return {
                                     results: $.map(data, function(item) {
-                                        var txt = '';
-                                        var j = 0;
-                                        item.penempatan.forEach(el => {
-                                            if (el.id_ta == $('#id_ta').val()) {
-                                                j++;
-                                                txt = ` (Sudah di Tempatkan ${j}x)`;
-                                            }
-                                        });
                                         return {
                                             id: item.nis,
-                                            text: item.nis + ' - ' + item.nama + txt // Tampilkan data siswa
+                                            text: item.nis + ' - ' + item.nama  // Tampilkan data siswa
                                         }
                                     })
                                 };

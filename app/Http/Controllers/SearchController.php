@@ -76,4 +76,24 @@ class SearchController extends Controller
 
         return response()->json(['results' => $results]);
     }
+
+    public function searchSiswaInPenempatan(Request $request)
+    {
+        $search = $request->get('q');
+        $results = [];
+
+        $results = Siswa::where('is_active', 1)
+            ->where(function ($query) use ($search) {
+            $query->where('nama', 'LIKE', "%{$search}%")
+                ->orWhere('nis', 'LIKE', "%{$search}%");
+        })
+            ->whereHas('penempatan', function($query) use ($request) {
+                $query->where('id_instruktur', $request->id_instruktur)
+                    ->where('id_ta', $request->id_ta);
+            })
+            ->select('nis', 'nama')
+            ->get();
+
+        return response()->json(['results' => $results]);
+    }
 }

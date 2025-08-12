@@ -91,6 +91,7 @@ Route::group(['middleware' => ['auth']], function () {
     //pengajuan surat
     Route::group(['middleware' => [RoleMiddleware::class . ':1,2,5,4'], 'prefix' => 'siswa', 'controller' => SiswaController::class], function () {
         Route::get('/search/siswa', 'search')->name('siswa.searchh');
+        Route::get('/search/siswa/penempatan', [SearchController::class, 'searchSiswaInPenempatan'])->name('siswa.searchh.penempatan');
         Route::get('pengajuan', [PengajuanSuratController::class, 'index'])->name('pengajuan.index');
         Route::get('pengajuan/create', [PengajuanSuratController::class, 'create'])->name('pengajuan.create');
         Route::post('/pengajuan-surat/store', [PengajuanSuratController::class, 'store'])->name('pengajuan.surat.store');

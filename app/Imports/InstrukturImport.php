@@ -28,7 +28,7 @@ class InstrukturImport implements ToModel, WithHeadingRow, WithChunkReading, Wit
     public function model(array $row)
     {
         // Validasi data yang diperlukan
-        if (empty($row['id_instruktur']) || empty($row['nama']) || empty($row['email']) || empty($row['id_dudi'])) {
+        if (empty($row['nama']) || empty($row['email']) || empty($row['id_dudi'])) {
             return null; // Skip baris yang tidak valid
         }
 
@@ -40,9 +40,11 @@ class InstrukturImport implements ToModel, WithHeadingRow, WithChunkReading, Wit
                 return null; // Skip jika id_dudi tidak ditemukan
             }
 
+            $id_instruktur = random_int(100000000000000, 999999999999999);
+
             // Jika id_instruktur sudah ada, update atau buat data baru
             $instruktur = Instruktur::updateOrCreate(
-                ['id_instruktur' => trim($row['id_instruktur'])], // Mencari berdasarkan id_instruktur
+                ['id_instruktur' => $id_instruktur], // Mencari berdasarkan id_instruktur
                 [
                     'nama' => trim($row['nama']),
                     'gender' => trim($row['gender'] ?? 'L'),
@@ -57,11 +59,11 @@ class InstrukturImport implements ToModel, WithHeadingRow, WithChunkReading, Wit
             );
 
             // Jika instruktur baru dibuat, buatkan user baru
-            $userData = User::where('username', trim($row['id_instruktur']))->first();
+            $userData = User::where('username', $id_instruktur)->first();
             if (!$userData) {
                 // Membuat user baru menggunakan id_instruktur sebagai username
                 $user = User::create([
-                    'username' => trim($row['id_instruktur']), // Gunakan id_instruktur sebagai username
+                    'username' => $id_instruktur, // Gunakan id_instruktur sebagai username
                     'password' => Hash::make(trim($row['id_instruktur'])), // Gunakan id_instruktur sebagai password yang di-hash
                     'role' => '4', // Role 4, atau sesuaikan dengan kebutuhan Anda
                 ]);
@@ -97,7 +99,6 @@ class InstrukturImport implements ToModel, WithHeadingRow, WithChunkReading, Wit
     public function rules(): array
     {
         return [
-            'id_instruktur' => 'required|max:20',
             'nama' => 'required|string|max:100',
             'email' => 'required|email|max:100',
             'gender' => 'nullable|string|in:L,P',

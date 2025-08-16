@@ -37,15 +37,7 @@ class InstrukturController extends Controller
     {
         // Validasi input
         $validator = Validator::make($request->all(), [
-            'id_instruktur' => [
-                'required',
-                'string',
-                'max:15',
-                'min:15',
-                Rule::unique('instruktur')->where(function ($query) {
-                    return $query->where('is_active', 1);
-                }),
-            ],
+
             'nama' => 'required|string|max:50',
             'gender' => 'required|string|max:1',
             'no_kontak' => 'required|string|max:14',
@@ -61,11 +53,13 @@ class InstrukturController extends Controller
         // Mulai transaksi database untuk memastikan atomicity
         DB::beginTransaction();
 
+        $id_instruktur = random_int(100000000000000, 999999999999999);
+
         try {
             // Buat user baru di tabel users
             $user = User::create([
-                'username' => $request->id_instruktur, // Gunakan id_instruktur sebagai username
-                'password' => Hash::make($request->id_instruktur), // Hash password menggunakan id_instruktur
+                'username' => $id_instruktur, // Gunakan id_instruktur sebagai username
+                'password' => Hash::make($id_instruktur), // Hash password menggunakan id_instruktur
                 'role' => '4',
             ]);
 
@@ -73,7 +67,7 @@ class InstrukturController extends Controller
             if ($user) {
                 // Simpan data siswa dengan id_user dari user yang baru dibuat
                 Instruktur::create([
-                    'id_instruktur' => $request->id_instruktur,
+                    'id_instruktur' => $id_instruktur,
                     'nama' => $request->nama,
                     'gender' => $request->gender,
                     'no_kontak' => $request->no_kontak,
@@ -102,13 +96,6 @@ class InstrukturController extends Controller
     {
         // Validasi input
         $validator = Validator::make($request->all(), [
-            'id_instruktur' => [
-                'required',
-                'string',
-                'max:15',
-                'min:15',
-                Rule::unique('instruktur')->where(fn($query) => $query->where('is_active', 1)),
-            ],
             'nama' => 'required|string|max:50',
             'gender' => 'required|string|max:1',
             'no_kontak' => 'required|string|max:14',
@@ -133,23 +120,25 @@ class InstrukturController extends Controller
         // Jalankan transaksi database
         DB::beginTransaction();
 
+        $id_instruktur = random_int(100000000000000, 999999999999999);
+
         try {
             // Cegah duplikasi user (opsional safeguard)
-            $existingUser = User::where('username', $request->id_instruktur)->first();
+            $existingUser = User::where('username', $id_instruktur)->first();
             if ($existingUser) {
                 throw new \Exception("User dengan username ini sudah ada.");
             }
 
             // Buat user baru
             $user = User::create([
-                'username' => $request->id_instruktur,
-                'password' => Hash::make($request->id_instruktur),
+                'username' => $id_instruktur,
+                'password' => Hash::make($id_instruktur),
                 'role' => 4,
             ]);
 
             // Buat instruktur baru
             Instruktur::create([
-                'id_instruktur' => $request->id_instruktur,
+                'id_instruktur' => $id_instruktur,
                 'nama' => $request->nama,
                 'gender' => $request->gender,
                 'no_kontak' => $request->no_kontak,

@@ -223,7 +223,6 @@
                                     <button style="display: none;" id="btnAbsen" class="btn btn-success"
                                         onclick="getLocation()"><i id="icon-absen" class="bi bi-fingerprint"
                                             style="font-size: 2rem;"></i> <br> Absen</button>
-
                                     <!-- Map Container -->
                                     <div id="map" style="height: 300px; margin-top: 20px;"></div>
                                 @endif
@@ -603,14 +602,6 @@
                 </div>
                 <div class="modal-body">
                     <form id="formTambahInstruktur" action="" method="POST">
-
-                        <div class="mb-3">
-                            <label for="id_instruktur" class="form-label">ID Instruktur</label>
-                            <input type="text" class="form-control @error('id_instruktur') is-invalid @enderror" id="id_instruktur" name="id_instruktur" value="{{ old('id_instruktur') }}" required maxlength="15">
-                            <div class="invalid-feedback">
-                                ID Instruktur wajib diisi dan maksimal 15 karakter.
-                            </div>
-                        </div>
                         <div class="mb-3">
                             <label for="nama" class="form-label">Nama</label>
                             <input type="text" class="form-control @error('nama') is-invalid @enderror" id="nama" name="nama" value="{{ old('nama') }}" required maxlength="50">

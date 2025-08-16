@@ -36,13 +36,6 @@
 
                 <form action="{{ route('instruktur.store') }}" method="POST" class="needs-validation" novalidate>
                     @csrf
-                    <div class="mb-3">
-                        <label for="id_instruktur" class="form-label">ID Instruktur</label>
-                        <input type="text" class="form-control @error('id_instruktur') is-invalid @enderror" id="id_instruktur" name="id_instruktur" value="{{ old('id_instruktur') }}" required maxlength="15">
-                        <div class="invalid-feedback">
-                            ID Instruktur wajib diisi dan maksimal 15 karakter.
-                        </div>
-                    </div>
 
                     <div class="mb-3">
                         <label for="nama" class="form-label">Nama</label>

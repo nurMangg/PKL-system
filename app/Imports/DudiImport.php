@@ -81,10 +81,10 @@ class DudiImport implements ToModel, WithHeadingRow, WithChunkReading, WithValid
         return [
             'nama' => 'required|string|max:100',
             'alamat' => 'nullable|string|max:255',
-            'no_kontak' => 'nullable|string|max:20',
-            'longitude' => 'nullable|string|max:20',
-            'latitude' => 'nullable|string|max:20',
-            'radius' => 'nullable|string|max:20',
+            'no_kontak' => 'nullable|max:20',
+            'longitude' => 'nullable|max:20',
+            'latitude' => 'nullable|max:20',
+            'radius' => 'nullable|max:20',
             'nama_pimpinan' => 'nullable|string|max:100',
             'is_active' => 'nullable|integer|in:0,1',
         ];

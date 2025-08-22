@@ -100,16 +100,16 @@
                             <button class="nav-link" data-bs-toggle="tab"
                                 data-bs-target="#profile-absensi">Kehadiran</button>
                         </li>
-                        
+
                         <li class="nav-item">
                             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-catatan">Catatan
                                 Kegiatan</button>
                         </li>
                         @if (session('id_guru') == $guru->id_guru || in_array(auth()->user()->role, [1, 2]))
-                        <li class="nav-item">
+                        {{-- <li class="nav-item">
                             <button class="nav-link" data-bs-toggle="tab"
                                 data-bs-target="#detail-surat">Detail Surat</button>
-                        </li>
+                        </li> --}}
                             <li class="nav-item">
                                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-change-password">
                                     Akun</button>
@@ -143,7 +143,7 @@
                                         <th>number</th>
                                         <th>file_name </th>
                                         <th>Nis </th>
-                                        <th>uploaded_at</th>                           
+                                        <th>uploaded_at</th>
                                       </t>
                                     </thead>
                                     <tbody>
@@ -166,7 +166,7 @@
                             </div>
                         </div>
 
-                       
+
                         <!-- Data Absensi Tab -->
                         <div class="tab-pane fade profile-absensi" id="profile-absensi">
 

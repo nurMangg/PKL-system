@@ -456,7 +456,7 @@ class ProfilSiswaController extends Controller
             return 'Hasil Nilai PKL';
         })
         ->addColumn('aksi', function ($nilai) {
-            $penempatan = Penempatan::where('nis', $nilai->siswa->nis)->first();
+            $penempatan = Penempatan::where('nis', $nilai->siswa->nis)->where('is_active', true)->first();
             return '
                 <a href="' . route('penilaian.print', [
                     'id_siswa' => $nilai->siswa->nis,

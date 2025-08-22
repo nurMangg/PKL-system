@@ -153,7 +153,9 @@ public function search(Request $request)
                     if ($status === 'Disetujui' || $status === 'Diterima') {
                         return '<span style="color: green; padding: 2px; border-radius: 5px; ">' . $status . '</span>';
                     }
-
+                    else if ($status === 'Ditolak') {
+                        return '<span style="color: red; padding: 2px; border-radius: 5px;">' . $status . '</span><br><small>Keterangan: ' . ($row->keterangan ?? '-') . '</small>';
+                    }
                     return $status;
                 })->rawColumns(['status']) // Jangan lupa tambahkan ini jika menggunakan HTML
 
@@ -245,7 +247,7 @@ public function search(Request $request)
             $kelompokTerakhir = $penempatanTerakhir ? $penempatanTerakhir->kelompok : 0;
             $kelompokBaru = $kelompokTerakhir + 1;
 
-            \Log::info('Kelompok baru: ' . $kelompokBaru);
+            // \Log::info('Kelompok baru: ' . $kelompokBaru);
 
             foreach ($detailSiswa as $detail) {
                 $penempatanData = [
@@ -266,7 +268,7 @@ public function search(Request $request)
             }
 
             DB::commit();
-            \Log::info('Penempatan completed successfully');
+            // \Log::info('Penempatan completed successfully');
 
             return response()->json([
                 'status' => true,

@@ -32,7 +32,7 @@
 
                 <li>
                     <a class="nav-link collapsed" href="{{ route('nilai-quesioner') }}">
-                        <i class="bi bi-circle"></i> <span>Nilai Kuesioner</span>
+                        <i class="bi bi-circle"></i> <span>Kuesioner</span>
                     </a>
                 </li>
                 <li>

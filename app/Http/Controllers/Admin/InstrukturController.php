@@ -53,14 +53,18 @@ class InstrukturController extends Controller
         // Mulai transaksi database untuk memastikan atomicity
         DB::beginTransaction();
 
-        $id_instruktur = random_int(100000000000000, 999999999999999);
 
         try {
-            // Buat user baru di tabel users
+            do {
+                // 6 digit tanggal (YYMMDD) + 4 digit random
+                $id_instruktur = date('ymd') . mt_rand(1000, 9999);
+            } while (User::where('username', $id_instruktur)->exists());
+
+            // Buat user baru
             $user = User::create([
-                'username' => $id_instruktur, // Gunakan id_instruktur sebagai username
-                'password' => Hash::make($id_instruktur), // Hash password menggunakan id_instruktur
-                'role' => '4',
+                'username' => $id_instruktur,
+                'password' => Hash::make($id_instruktur),
+                'role'     => 4,
             ]);
 
             // Pastikan user berhasil disimpan, dan ambil ID-nya
@@ -120,20 +124,19 @@ class InstrukturController extends Controller
         // Jalankan transaksi database
         DB::beginTransaction();
 
-        $id_instruktur = random_int(100000000000000, 999999999999999);
 
         try {
-            // Cegah duplikasi user (opsional safeguard)
-            $existingUser = User::where('username', $id_instruktur)->first();
-            if ($existingUser) {
-                throw new \Exception("User dengan username ini sudah ada.");
-            }
+
+            do {
+                // 6 digit tanggal (YYMMDD) + 4 digit random
+                $id_instruktur = date('ymd') . mt_rand(1000, 9999);
+            } while (User::where('username', $id_instruktur)->exists());
 
             // Buat user baru
             $user = User::create([
                 'username' => $id_instruktur,
                 'password' => Hash::make($id_instruktur),
-                'role' => 4,
+                'role'     => 4,
             ]);
 
             // Buat instruktur baru

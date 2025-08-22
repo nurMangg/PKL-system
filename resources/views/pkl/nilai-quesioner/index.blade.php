@@ -1,14 +1,14 @@
 @extends('layouts.main')
 @section('title')
-    Nilai Kuesioner
+     Kuesioner
 @endsection
 @section('pagetitle')
     <div class="pagetitle">
-        <h1>Nilai Kuesioner</h1>
+        <h1> Kuesioner</h1>
         <nav>
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">PKL</li>
-                <li class="breadcrumb-item active">Nilai Kuesioner</li>
+                <li class="breadcrumb-item active">Kuesioner</li>
             </ol>
         </nav>
     </div><!-- End Page Title -->
@@ -18,7 +18,7 @@
     <div class="card">
         <div class="card-header">
             <div class="d-flex justify-content-between">
-                <h5>Data Nilai Kuesioner</h5>
+                <h5>Data Kuesioner</h5>
                 <div>
                     {{-- <button class="btn btn-primary btn-sm" id="btnAdd"><i class="bi bi-plus-circle"></i> Tambah</button> --}}
                     {{-- <button class="btn btn-danger btn-sm" id="btnDownload"><i class="bi bi-download"></i> Download</button> --}}
@@ -62,7 +62,7 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitle">Tambah Nilai Quesioner</h5>
+                    <h5 class="modal-title" id="modalTitle">Tambah Quesioner</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">

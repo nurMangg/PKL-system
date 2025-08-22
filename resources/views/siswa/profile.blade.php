@@ -30,6 +30,22 @@
 
 @section('content')
     <div class="row">
+
+        @if (session('success'))
+            <div class="alert alert-success">
+                {{ session('success') }}
+            </div>
+        @endif
+        @if (session('error'))
+            <div class="alert alert-danger">
+                {{ session('error') }}
+            </div>
+        @endif
+        @if (session('errors'))
+            <div class="alert alert-danger">
+                {{ session('errors') }}
+            </div>
+        @endif
         <!-- Profile Section -->
         <div class="col-xl-4">
             <div class="card">

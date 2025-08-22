@@ -40,14 +40,18 @@ class FileController extends Controller
     public function upload(Request $request)
     {
         // Validasi file
-        $request->validate([
+        $validated = $request->validate([
             'file' => 'required|file|mimes:pdf,doc,docx,png|max:2048',
             'id_pengajuan' => 'required',
             'instruktur_id' => 'required',
         ]);
 
-        // Cek apakah file ada
-        if ($request->hasFile('file')) {
+        try {
+            // Cek apakah file ada
+            if (!$request->hasFile('file')) {
+                return redirect()->back()->withInput()->withErrors(['file' => 'File tidak ditemukan.']);
+            }
+
             // Ambil file
             $file = $request->file('file');
 
@@ -59,12 +63,20 @@ class FileController extends Controller
 
             // Simpan metadata file ke database
             $pengajuan = Pengajuan::findOrFail($request->id_pengajuan);
-            $pengajuan->update(['file_balasan_path' => $filePath, 'status' => 'Diterima', 'id_instrukturId' => $request->instruktur_id]);
+            $pengajuan->update([
+                'file_balasan_path' => $filePath,
+                'status' => 'Diterima',
+                'id_instrukturId' => $request->instruktur_id
+            ]);
 
-            return redirect()->route('d.siswa');
+            return redirect()->route('d.siswa')->with('success', 'File berhasil diunggah.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Tangkap error validasi dan kembalikan ke form dengan pesan error
+            return redirect()->back()->withInput()->withErrors($e->errors());
+        } catch (\Exception $e) {
+            // Tangkap error lain dan tampilkan pesan error
+            return redirect()->back()->withInput()->withErrors(['error' => 'Gagal mengunggah file: ' . $e->getMessage()]);
         }
-
-        return redirect()->route('d.siswa')->withErrors('error', 'Gagal mengunggah file.');
     }
 
     public function delete($id)

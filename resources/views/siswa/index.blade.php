@@ -37,7 +37,7 @@
                             <th>NISN</th>
                             <th>Nama</th>
                             <th>Jurusan</th>
-                            <th>Kelas</th>
+                           
                             <th>#</th>
                         </tr>
                     </thead>
@@ -101,10 +101,7 @@
                         data: 'jurusan',
                         name: 'jurusan'
                     },
-                    {
-                        data: 'kelas',
-                        name: 'kelas'
-                    },
+
                     {
                         data: 'action',
                         name: 'action',

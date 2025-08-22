@@ -106,10 +106,7 @@
                                 Kegiatan</button>
                         </li>
                         @if (session('id_guru') == $guru->id_guru || in_array(auth()->user()->role, [1, 2]))
-                        {{-- <li class="nav-item">
-                            <button class="nav-link" data-bs-toggle="tab"
-                                data-bs-target="#detail-surat">Detail Surat</button>
-                        </li> --}}
+                        
                             <li class="nav-item">
                                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-change-password">
                                     Akun</button>

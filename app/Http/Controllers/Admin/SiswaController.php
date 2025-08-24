@@ -438,9 +438,50 @@ class SiswaController extends Controller
         }
     }
 
+    /**
+     * Helper method untuk mendapatkan informasi jurusan user yang sedang login
+     */
+    private function getCurrentUserJurusan()
+    {
+        if (!Auth::check()) {
+            return null;
+        }
+
+        $user = Auth::user();
+
+        if ($user->role == 2) {
+            // Admin jurusan
+            $sessionJurusan = session('id_jurusan');
+            if ($sessionJurusan) {
+                return Jurusan::find($sessionJurusan);
+            }
+        }
+
+        return null;
+    }
+
     public function downloadExcel()
     {
-        // Menggunakan export class untuk mendownload Excel
-        return Excel::download(new SiswaExport, 'data-siswa ' . date('Y-m-d') . '.xlsx');
+        try {
+            // Buat nama file berdasarkan role user yang login
+            $filename = 'data-siswa';
+            $jurusanId = null;
+
+            // Jika admin jurusan, tambahkan nama jurusan pada nama file
+            $currentJurusan = $this->getCurrentUserJurusan();
+            if ($currentJurusan) {
+                $jurusanId = $currentJurusan->id_jurusan;
+                $filename .= '-' . $currentJurusan->jurusan;
+            }
+
+            $filename .= ' ' . date('Y-m-d') . '.xlsx';
+
+            // Menggunakan export class untuk mendownload Excel dengan parameter jurusan
+            return Excel::download(new SiswaExport($jurusanId), $filename);
+
+        } catch (\Exception $e) {
+            \Log::error('Error downloading Excel: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Terjadi kesalahan saat mendownload file Excel: ' . $e->getMessage()]);
+        }
     }
 }

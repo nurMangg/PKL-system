@@ -3,20 +3,45 @@
 namespace App\Exports;
 
 use App\Models\Siswa;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 
 class SiswaExport implements FromCollection, WithHeadings
 {
+    protected $jurusanId;
+
+    /**
+     * Constructor untuk menerima parameter jurusan
+     */
+    public function __construct($jurusanId = null)
+    {
+        $this->jurusanId = $jurusanId;
+    }
+
     /**
      * Mengambil data dari model Siswa dan mengembalikannya sebagai koleksi.
+     * Jika login sebagai admin jurusan, hanya tampilkan data siswa dari jurusan tersebut.
      *
      * @return \Illuminate\Support\Collection
      */
     public function collection()
     {
-        return Siswa::active()
-            ->get([
+        $query = Siswa::active()->with('jurusan');
+
+        // Filter berdasarkan jurusan yang diberikan atau role user yang login
+        if ($this->jurusanId) {
+            // Jika jurusan ID diberikan secara eksplisit
+            $query->where('id_jurusan', $this->jurusanId);
+        } elseif (Auth::check() && Auth::user()->role == 2) {
+            // Jika admin jurusan, filter berdasarkan jurusan yang dia kelola
+            $sessionJurusan = session('id_jurusan');
+            if ($sessionJurusan) {
+                $query->where('id_jurusan', $sessionJurusan);
+            }
+        }
+
+        return $query->get([
                 'nis',
                 'nisn',
                 'nama',
@@ -37,6 +62,14 @@ class SiswaExport implements FromCollection, WithHeadings
             ->map(function($siswa) {
                 // Generate URL asset for foto if exists
                 $siswa->foto = $siswa->foto ? asset('storage/' . $siswa->foto) : null;
+
+                // Tambahkan nama jurusan yang lebih user-friendly
+                if ($siswa->jurusan) {
+                    $siswa->nama_jurusan = $siswa->jurusan->jurusan;
+                } else {
+                    $siswa->nama_jurusan = 'N/A';
+                }
+
                 return $siswa;
             });
     }
@@ -61,6 +94,7 @@ class SiswaExport implements FromCollection, WithHeadings
             'Email',
             'Alamat',
             'ID Jurusan',
+            'Nama Jurusan',
             'Nama Wali',
             'Alamat Wali',
             'No Kontak Wali',

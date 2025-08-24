@@ -8,7 +8,7 @@
     <title>Monitoring | @yield('title')</title>
     <meta content="" name="description">
     <meta content="" name="keywords">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    {{-- <meta name="csrf-token" content="{{ csrf_token() }}"> --}}
 
     <!-- Favicons -->
     <link href="{{ asset('assets') }}/img/SMK_KARBAK.png" rel="icon">
@@ -56,9 +56,9 @@
                 <a href="{{ url('/') }}" class="logo d-flex align-items-center">
                     <!-- <img src="{{ asset('assets') }}/img/bgputih.png" alt=""> -->
                     <div style="
-                        display: inline-block; 
-                        position: relative; 
-                        background-color: white; 
+                        display: inline-block;
+                        position: relative;
+                        background-color: white;
                         clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
                         padding: 1,5px;
                     ">

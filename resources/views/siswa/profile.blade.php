@@ -1990,7 +1990,42 @@
 
 {{-- tambah Instruktur --}}
     <script>
+        function showKeteranganModal(keterangan) {
+                // Jika modal sudah ada, hapus dulu
+                $('#keteranganModal').remove();
+
+                // Buat modal baru
+                var modalHtml = `
+                <div class="modal fade" id="keteranganModal" tabindex="-1" aria-labelledby="keteranganModalLabel" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="keteranganModalLabel">Keterangan Penolakan</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <p>${keterangan ? keterangan : '-'}</p>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                `;
+                // Tambahkan ke body
+                $('body').append(modalHtml);
+                // Tampilkan modal
+                var modal = new bootstrap.Modal(document.getElementById('keteranganModal'));
+                modal.show();
+            }
+            
         $(document).ready(function() {
+            // Modal untuk menampilkan keterangan penolakan surat
+
+
+
+
             $(document).on('click', '.detail-btn', function() {
                 var id = $(this).data('id');
                 $.ajax({

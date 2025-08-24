@@ -154,6 +154,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::delete('/pengajuan-surat/{id}', [PengajuanSuratController::class, 'delete'])->name('pengajuan.surat.delete');
         Route::put('/pengajuan-surat/reject/{id}', [PengajuanSuratController::class, 'reject'])->name('pengajuan.surat.reject');
         Route::post('/pengajuan/surat/approve', [PengajuanSuratController::class, 'approve'])->name('pengajuan.surat.approve');
+    Route::get('/pengajuan-surat/lihatbalasan/{id}', [PengajuanSuratController::class, 'lihatBalasan'])->name('pengajuan.surat.lihatbalasan');
 
 
 

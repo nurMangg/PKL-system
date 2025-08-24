@@ -148,15 +148,22 @@ public function search(Request $request)
                     return Pengajuan::where('id', $row->id_surat)->first()->kepada_yth;
                 })
                 ->editColumn('status', function ($row) {
-                    $status = Pengajuan::where('id', $row->id_surat)->first()->status;
-                    // Tambahkan elemen span dengan kelas khusus
+                    $pengajuan = Pengajuan::where('id', $row->id_surat)->first();
+                    $status = $pengajuan->status;
+                    $keterangan = $pengajuan->keterangan ?? null;
+
                     if ($status === 'Disetujui' || $status === 'Diterima') {
-                        return '<span style="color: green; padding: 2px; border-radius: 5px; ">' . $status . '</span>';
+                        return '<span class="badge bg-success">' . $status . '</span>';
                     }
                     else if ($status === 'Ditolak') {
-                        return '<span style="color: red; padding: 2px; border-radius: 5px;">' . $status . '</span><br><small>Keterangan: ' . ($row->keterangan ?? '-') . '</small>';
+                        // Tampilkan status dengan tombol untuk membuka modal keterangan
+                        $modalButton = '';
+                        if ($keterangan != null) {
+                            $modalButton = ' style="cursor:pointer" onclick="showKeteranganModal(\'' . e($keterangan) . '\')"';
+                        }
+                        return '<span class="badge bg-danger"' . $modalButton . '>' . $status . '</span>';
                     }
-                    return $status;
+                    return '<span class="badge bg-secondary">' . $status . '</span>';
                 })->rawColumns(['status']) // Jangan lupa tambahkan ini jika menggunakan HTML
 
                 ->addColumn('aksi', function ($row) {
@@ -437,13 +444,14 @@ public function search(Request $request)
                         $actionButtons .= '<li><button class="dropdown-item approve-btn" data-id="' . $row->id . '">Disetujui</button></li>';
                     }
 
-                    if ($row->status === 'Diterima') {
+                    if ($row->status === 'Diterima' || $row->status === 'Ditempatkan') {
                         $actionButtons .= '<li><button class="dropdown-item ditempatkan-btn" data-id="' . $row->id . '">Tempatkan</button></li>';
+                        $actionButtons .= '<li><button class="dropdown-item lihatbalasan-btn" data-id="' . $row->id . '">Lihat Balasan</button></li>';
                     }
 
                     $actionButtons .= '
-                                <li><button class="dropdown-item reject-btn" data-id="' . $row->id . '">Ditolak</button></li>
-                                <li><a class="dropdown-item" href="/surat/' . $row->id . '">Lihat</a></li>
+                                <li><button class="dropdown-item reject-btn" data-id="' . $row->id . '">Tolak Surat</button></li>
+                                <li><a class="dropdown-item" href="/surat/' . $row->id . '">Lihat Surat</a></li>
                             </ul>
                         </div>
                         <button class="btn btn-sm btn-danger delete-btn" data-id="' . $row->id . '">Hapus</button>
@@ -520,6 +528,22 @@ public function details($id)
         'siswa' => $siswa
     ]);
 }
+
+public function lihatbalasan($id)
+{
+    $pengajuan = Pengajuan::findOrFail($id);
+
+    // Bentuk link URL di kolom balasan_path
+    $balasanPath = $pengajuan->file_balasan_path
+        ? url('storage/' . ltrim($pengajuan->file_balasan_path, '/'))
+        : null;
+
+    return response()->json([
+        'pengajuan' => $pengajuan,
+        'balasan_url' => $balasanPath
+    ]);
+}
+
 
 
 

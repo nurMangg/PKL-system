@@ -23,7 +23,8 @@ class Pengajuan extends Model
         'kepada_yth',
         'file_balasan_path',
         'no_surat',
-        'id_instrukturId'
+        'id_instrukturId',
+        'keterangan'
     ];
 
     // protected $table = 'pengajuan_surat';

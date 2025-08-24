@@ -297,8 +297,36 @@
                             <select type="text" id="guru" class="form-select" name="guru" required></select>
                             <div class="invalid-feedback">Guru wajib dipilih.</div>
                         </div>
+
                         <button type="submit" class="btn btn-primary">Simpan</button>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Keterangan Penolakan -->
+    <div class="modal fade" id="keteranganModal" tabindex="-1" aria-labelledby="keteranganModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="keteranganModalLabel">Keterangan Penolakan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Status:</strong> <span class="badge bg-danger" id="modalStatus">Ditolak</span>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Keterangan:</strong></label>
+                        <div class="border rounded p-3 bg-light" id="modalKeterangan">
+                            <!-- Keterangan akan ditampilkan di sini -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
         </div>
@@ -637,7 +665,6 @@
                                 <td>${index + 1}</td>
                                 <td>${siswa.nis}</td>
                                 <td>${siswa.nama}</td>
-                                <td>${siswa.kelas}</td>
                                 <td>${siswa.jurusan}</td>
                             </tr>
                         `;
@@ -651,7 +678,6 @@
                                     <th>#</th>
                                     <th>NIS</th>
                                     <th>Nama</th>
-                                    <th>Kelas</th>
                                     <th>Jurusan</th>
                                 </tr>
                             </thead>
@@ -813,6 +839,26 @@
                 }
             });
         });
+
+        $(document).on('click', '.lihatbalasan-btn', function() {
+            var id = $(this).data('id');
+            $.ajax({
+                url: "{{ route('pengajuan.surat.lihatbalasan', '') }}/" + id,
+                method: "GET",
+                success: function(response) {
+                    if (response.balasan_url) {
+                        window.open(response.balasan_url, '_blank');
+                    } else {
+                        Toast.fire({
+                            icon: "error",
+                            title: "File balasan tidak tersedia."
+                        });
+                    }
+                }
+            });
+        });
+
+        
     </script>
 
     <script>
@@ -1068,6 +1114,31 @@
             $('#siswa-input-group .siswa-input-row:not(:first)').remove();
             studentCount = 1;
         }
+
+        // Function untuk menampilkan modal keterangan penolakan
+        function showKeteranganModal(keterangan) {
+            try {
+                // Validasi input
+                if (!keterangan || keterangan === '-') {
+                    console.warn('Keterangan kosong atau tidak valid');
+                    return;
+                }
+
+                // Decode HTML entities jika ada
+                const decodedKeterangan = $('<div>').html(keterangan).text();
+
+                // Set konten modal
+                $('#modalKeterangan').text(decodedKeterangan);
+
+                // Tampilkan modal
+                $('#keteranganModal').modal('show');
+
+            } catch (error) {
+                console.error('Error saat menampilkan modal keterangan:', error);
+                // Fallback: tampilkan pesan error
+                alert('Terjadi kesalahan saat menampilkan keterangan. Silakan coba lagi.');
+            }
+        }
     </script>
 @endsection
 
@@ -1114,6 +1185,41 @@
             padding: 0.25rem 0.5rem;
             font-size: 0.875rem;
             border-radius: 0.2rem;
+        }
+
+        /* Styling untuk modal keterangan */
+        #keteranganModal .modal-body {
+            padding: 1.5rem;
+        }
+
+        #keteranganModal .alert {
+            border-left: 4px solid #ffc107;
+        }
+
+        #keteranganModal .border {
+            border-color: #dee2e6 !important;
+        }
+
+        #keteranganModal .bg-light {
+            background-color: #f8f9fa !important;
+        }
+
+        /* Styling untuk tombol info */
+        .btn-outline-info {
+            border-color: #17a2b8;
+            color: #17a2b8;
+        }
+
+        .btn-outline-info:hover {
+            background-color: #17a2b8;
+            border-color: #17a2b8;
+            color: white;
+        }
+
+        /* Badge styling */
+        .badge {
+            font-size: 0.75em;
+            padding: 0.35em 0.65em;
         }
     </style>
 @endsection

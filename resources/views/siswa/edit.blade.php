@@ -159,7 +159,7 @@
                             <div class="invalid-feedback">Alamat wajib diisi dan maksimal 225 karakter.</div>
                         </div>
 
-                        <div class="mb-3">
+                        {{-- <div class="mb-3">
                             <label for="kelas" class="form-label">Kelas</label>
                             <select class="form-control" id="kelas" name="kelas" required>
                                 <option value="">Pilih</option>
@@ -168,7 +168,7 @@
                                 <option value="XII" {{ old('kelas', $siswa->kelas) == 'XII' ? 'selected' : '' }}>XII</option>
                             </select>
                             <div class="invalid-feedback">Kelas wajib dipilih.</div>
-                        </div>
+                        </div> --}}
 
                         <!-- Step Navigation Buttons -->
                         <button type="button" class="btn btn-secondary" onclick="prevStep(1)">Previous</button>

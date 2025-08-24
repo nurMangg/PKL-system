@@ -451,9 +451,8 @@ class SiswaController extends Controller
 
         if ($user->role == 2) {
             // Admin jurusan
-            $sessionJurusan = session('id_jurusan');
-            if ($sessionJurusan) {
-                return Jurusan::find($sessionJurusan);
+            if (isset($user->guru) && $user->guru->id_jurusan) {
+                return Jurusan::find($user->guru->id_jurusan);
             }
         }
 
@@ -484,4 +483,5 @@ class SiswaController extends Controller
             return back()->withErrors(['error' => 'Terjadi kesalahan saat mendownload file Excel: ' . $e->getMessage()]);
         }
     }
+
 }

@@ -130,6 +130,7 @@
                     type: 'POST',
                     data: function(d) {
                         d.id_ta = $('#id_ta1').val();
+                        d._token = $('meta[name="csrf-token"]').attr('content');
                     }
                 },
                 columns: [{

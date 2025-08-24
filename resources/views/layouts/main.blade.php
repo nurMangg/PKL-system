@@ -8,7 +8,7 @@
     <title>Monitoring | @yield('title')</title>
     <meta content="" name="description">
     <meta content="" name="keywords">
-    {{-- <meta name="csrf-token" content="{{ csrf_token() }}"> --}}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- Favicons -->
     <link href="{{ asset('assets') }}/img/SMK_KARBAK.png" rel="icon">

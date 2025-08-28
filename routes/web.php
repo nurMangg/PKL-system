@@ -26,6 +26,7 @@ use App\Http\Controllers\Siswa\LihatFileController;
 use App\Http\Controllers\Siswa\ProfilSiswaController;
 use App\Http\Controllers\Siswa\PengajuanSuratController;
 use App\Http\Controllers\Siswa\SuratController;
+use App\Http\Controllers\Admin\StatusPklController;
 use App\Http\Middleware\RoleMiddleware;
 use Faker\Core\File;
 use Illuminate\Support\Facades\Artisan;
@@ -143,6 +144,12 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('penilaian', [PenilaianController::class, 'index'])->name('penilaian.index');
     });
 
+    // Status PKL
+    Route::group(['middleware' => [RoleMiddleware::class . ':1,2']], function () {
+        Route::get('status-pkl', [StatusPklController::class, 'index'])->name('status-pkl.index');
+        Route::post('status-pkl/data', [StatusPklController::class, 'data'])->name('status-pkl.data');
+        Route::get('status-pkl/downloadExcel', [StatusPklController::class, 'downloadExcel'])->name('status-pkl.downloadExcel');
+    });
 
     // admin
     Route::middleware([RoleMiddleware::class . ':1,2'])->group(function () {

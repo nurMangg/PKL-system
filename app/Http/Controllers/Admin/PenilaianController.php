@@ -299,6 +299,16 @@ class PenilaianController extends Controller
                 $userId
             );
 
+            // Step 3: Update status penempatan siswa ke selesai
+            $penempatan = Penempatan::where('nis', $request->id_siswa)
+                ->where('is_active', 1)
+                ->first();
+
+            if ($penempatan) {
+                $penempatan->status = 'selesai';
+                $penempatan->save();
+            }
+
             DB::commit();
 
             if (Auth::user()->role == 4) {

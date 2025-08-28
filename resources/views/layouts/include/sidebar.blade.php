@@ -45,6 +45,11 @@
                         <i class="bi bi-circle"></i> <span>Penilaian</span>
                     </a>
                 </li>
+                <li>
+                    <a class="nav-link collapsed" href="{{ route('status-pkl.index') }}">
+                        <i class="bi bi-circle"></i> <span>Status PKL</span>
+                    </a>
+                </li>
 
             </ul>
         </li><!-- End PKL Nav -->

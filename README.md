@@ -27,13 +27,12 @@ Aplikasi ini merupakan sistem manajemen penempatan siswa PKL (Praktik Kerja Lapa
 1. **Clone repository ini**
    ```
    git clone https://github.com/nurMangg/PKL-system.git
-   cd <nama-folder>
+   cd PKL-system
    ```
 
 2. **Install dependency**
    ```
    composer install
-   npm install
    ```
 
 3. **Copy file environment**

@@ -129,10 +129,16 @@
                                         @else
                                             {{-- Jika tidak ada level 3, tampilkan keterangan di level 2 --}}
                                             @if($subIndicator->is_nilai !== null)
-                                                @if($subIndicator->is_nilai >= 80)
-                                                    <span class="">Tercapai</span>
+                                                @if($subIndicator->is_nilai >= 90)
+                                                    <span class="">Sangat Baik</span>
+                                                @elseif($subIndicator->is_nilai >= 80)
+                                                    <span class="">Baik</span>
+                                                @elseif($subIndicator->is_nilai >= 70)
+                                                    <span class="">Cukup</span>
+                                                @elseif($subIndicator->is_nilai >= 60)
+                                                    <span class="">Kurang</span>
                                                 @else
-                                                    <span class="">Tidak Tercapai</span>
+                                                    <span class="">Sangat Kurang</span>
                                                 @endif
                                             @else
                                                 <span class="text-muted">Belum Dinilai</span>
@@ -159,10 +165,16 @@
                                             </td>
                                             <td>
                                                 @if($subSubIndicator->is_nilai !== null)
-                                                    @if($subSubIndicator->is_nilai >= 80)
-                                                        <span class="">Tercapai</span>
+                                                    @if($subSubIndicator->is_nilai >= 90)
+                                                        <span class="">Sangat Baik</span>
+                                                    @elseif($subSubIndicator->is_nilai >= 80)
+                                                        <span class="">Baik</span>
+                                                    @elseif($subSubIndicator->is_nilai >= 70)
+                                                        <span class="">Cukup</span>
+                                                    @elseif($subSubIndicator->is_nilai >= 60)
+                                                        <span class="">Kurang</span>
                                                     @else
-                                                        <span class="">Tidak Tercapai</span>
+                                                        <span class="">Sangat Kurang</span>
                                                     @endif
                                                 @else
                                                     <span class="text-muted">Belum Dinilai</span>

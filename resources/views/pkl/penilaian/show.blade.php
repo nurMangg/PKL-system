@@ -41,10 +41,10 @@
                         <th>Nama Siswa</th>
                         <td>{{ $siswa->nama }}</td>
                     </tr>
-                    <tr>
+                    {{-- <tr>
                         <th>Kelas</th>
                         <td>{{ $siswa->kelas ?? 'N/A' }}</td>
-                    </tr>
+                    </tr> --}}
                     {{-- <tr>
                         <th>Judul Project PKL</th>
                         <td>{{ $projectpkl->projectpkl ?? 'N/A' }}</td>

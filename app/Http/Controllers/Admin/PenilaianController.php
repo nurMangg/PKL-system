@@ -106,14 +106,16 @@ class PenilaianController extends Controller
                         ->where('is_active', 1)
                         ->first();
 
-                    $penempatan = Penempatan::where('nis', $siswa->nis)->first();
+                    $penempatan = Penempatan::where('nis', $siswa->nis)
+                            ->where('is_active', 1)
+                            ->first();
 
 
                     // Jika admin/superadmin hanya bisa melihat (Detail)
                     if (in_array(auth()->user()->role, [1, 2])) {
                         if ($penilaian) {
                         return '
-                            <a href="' . url('penilaian/' . $siswa->nis . '/' . (request('id_ta', getActiveAcademicYear()->id_ta)) . '/' . (request('kelompok', $penempatan->kelompok ?? 'all')) . '/print') . '" class="btn btn-secondary btn-sm" target="_blank">
+                            <a href="' . url('penilaian/' . $penempatan->nis . '/' . (request('id_ta', getActiveAcademicYear()->id_ta)) . '/' . (request('kelompok', $penempatan->kelompok ?? 'all')) . '/print') . '" class="btn btn-secondary btn-sm" target="_blank">
                                     <i class="bi bi-printer"></i> Cetak
                                 </a>
                         ';
@@ -127,22 +129,22 @@ class PenilaianController extends Controller
                     elseif (auth()->user()->role == 4) {
                         if ($penilaian) {
                             return '
-                                <a href="' . route('penilaian.show', $siswa->nis) . '" class="btn btn-info btn-sm">
+                                <a href="' . route('penilaian.show', $penempatan->nis) . '" class="btn btn-info btn-sm">
                                     <i class="bi bi-eye"></i> Detail
                                 </a>
-                                <a href="' . route('penilaian.edit', $siswa->nis) . '" class="btn btn-warning btn-sm">
+                                <a href="' . route('penilaian.edit', $penempatan->nis) . '" class="btn btn-warning btn-sm">
                                     <i class="bi bi-pencil"></i> Edit
                                 </a>
-                                <a href="' . url('penilaian/' . $siswa->nis . '/' . (request('id_ta', getActiveAcademicYear()->id_ta)) . '/' . (request('kelompok', $penempatan->kelompok ?? 'all')) . '/print') . '" class="btn btn-secondary btn-sm" target="_blank">
+                                <a href="' . url('penilaian/' . $penempatan->nis . '/' . (request('id_ta', getActiveAcademicYear()->id_ta)) . '/' . (request('kelompok', $penempatan->kelompok ?? 'all')) . '/print') . '" class="btn btn-secondary btn-sm" target="_blank">
                                     <i class="bi bi-printer"></i> Cetak
                                 </a>
-                                <a href="' . route('penilaian.show', $siswa->nis) . '" class="btn btn-success btn-sm">
+                                <a href="' . route('penilaian.show', $penempatan->nis) . '" class="btn btn-success btn-sm">
                                     <i class="bi bi-eye"></i> Lihat
                                 </a>
                             ';
                         } else {
                             return '
-                                <a href="' . route('penilaian.create', $siswa->nis) . '" class="btn btn-primary btn-sm">
+                                <a href="' . route('penilaian.create', $penempatan->nis) . '" class="btn btn-primary btn-sm">
                                     <i class="bi bi-pencil-square"></i> Nilai
                                 </a>
                             ';

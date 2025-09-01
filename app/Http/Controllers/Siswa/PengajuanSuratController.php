@@ -46,34 +46,46 @@ class PengajuanSuratController extends Controller
 
 
     // Cek setiap siswa apakah sudah ada penempatan di perusahaan tujuan
-    foreach ($request->namaSiswa as $nama) {
-        // Cek apakah siswa sudah mengajukan ke perusahaan tujuan yang sama dan status pengajuan bukan Ditolak
-        $sudahMengajukan = PengajuanDetail::where('nis', $nama)
-            ->whereHas('pengajuan', function($query) use ($request) {
-                $query->where('perusahaan_tujuan', $request->perusahaan_tujuan)
-                      ->where('status', '!=', 'Ditolak');
-            })
-            ->exists();
+    foreach ($request->namaSiswa as $nis) {
+        $siswa = Siswa::where('nis', $nis)->first();
+
+        // Cek pengajuan ke perusahaan tujuan yang sama (kecuali Ditolak)
+        $sudahMengajukan = PengajuanDetail::where('nis', $nis)
+            ->whereHas('pengajuan', function($q) use ($request) {
+                $q->where('perusahaan_tujuan', $request->perusahaan_tujuan)
+                  ->where('status', '!=', 'Ditolak');
+            })->exists();
 
         if ($sudahMengajukan) {
-            $siswa = Siswa::where('nis', $nama)->first();
             return response()->json([
                 'status' => 'error',
-                'message' => 'Siswa ' . ($siswa ? $siswa->nama : $nama) . ' sudah mengajukan surat ke perusahaan tujuan yang sama.'
+                'message' => 'Siswa ' . ($siswa->nama ?? $nis) . ' sudah mengajukan surat ke perusahaan tujuan yang sama.'
             ], 422);
         }
 
-        // Tambahan: cek apakah siswa sudah pernah ditempatkan di perusahaan tujuan dan status penempatan selesai
-        $sudahDitempatkan = Penempatan::where('nis', $nama)
+        // Cek penempatan selesai di perusahaan tujuan
+        $sudahDitempatkan = Penempatan::where('nis', $nis)
             ->where('status', 'selesai')
             ->where('is_active', 1)
             ->exists();
 
         if ($sudahDitempatkan) {
-            $siswa = Siswa::where('nis', $nama)->first();
             return response()->json([
                 'status' => 'error',
-                'message' => 'Siswa ' . ($siswa ? $siswa->nama : $nama) . ' sudah ditempatkan di perusahaan tujuan dan status penempatan sudah selesai.'
+                'message' => 'Siswa ' . ($siswa->nama ?? $nis) . ' sudah ditempatkan di perusahaan tujuan dan status penempatan sudah selesai.'
+            ], 422);
+        }
+
+        // Cek pengajuan surat di hari yang sama
+        $sudahMengajukanHariIni = PengajuanDetail::where('nis', $nis)
+            ->whereHas('pengajuan', function($q) {
+                $q->whereDate('tanggal_pengajuan', now());
+            })->exists();
+
+        if ($sudahMengajukanHariIni) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Siswa ' . ($siswa->nama ?? $nis) . ' sudah mengajukan surat di hari yang sama.'
             ], 422);
         }
     }

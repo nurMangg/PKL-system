@@ -6,7 +6,7 @@ use App\Exports\PenempatanExport;
 use App\Http\Controllers\Controller;
 use App\Imports\PenempatanImport;
 use App\Models\Instruktur;
-use App\Models\PengajuanSurat;
+use App\Models\Pengajuan;
 use App\Models\Penempatan;
 use App\Models\ThnAkademik;
 use Illuminate\Http\Request;
@@ -117,7 +117,7 @@ class PenempatanController extends Controller
         $data->save();
 
         // Hapus juga data terkait di pengajuanSurat
-        PengajuanSurat::where('id_penempatan', $data->id_penempatan)->delete();
+        Pengajuan::where('id_penempatan', $data->id_penempatan)->delete();
 
         return response()->json([
             'status' => true,

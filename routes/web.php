@@ -270,6 +270,10 @@ Route::group(['middleware' => ['auth']], function () {
             Route::get('/downloadExcel', 'downloadExcel')->name('master.quesioner.downloadExcel');
         });
 
+
+    });
+
+    Route::group(['middleware' => [RoleMiddleware::class . ':1,2'], 'prefix' => 'master'], function () {
         Route::group(['prefix' => 'kepala-sekolah', 'controller' => KepalaSekolahController::class], function () {
             Route::get('/', 'index')->name('master.kepala-sekolah');
             Route::get('/data', 'data')->name('master.kepala-sekolah.data');

@@ -43,6 +43,7 @@ Template Penilaian
                         <th>Jurusan</th>
                         <th>Dibuat Oleh</th>
                         <th>Tanggal Dibuat</th>
+                        <th>Status</th>
                         <th>#</th>
                     </tr>
                 </thead>
@@ -227,6 +228,13 @@ Template Penilaian
                     }
                 },
                 {
+                    data: 'is_active',
+                    name: 'is_active',
+                    render: function (data) {
+                        return data ? 'Aktif' : 'Tidak Aktif';
+                    }
+                },
+                {
                     data: 'action',
                     name: 'action',
                     orderable: false,
@@ -236,7 +244,11 @@ Template Penilaian
                                 <div class="btn-group" role="group">
                                     <button type="button" class="btn btn-info btn-sm btn-detail" data-id="${row.id}"><i class="bi bi-eye"></i></button>
                                     <button type="button" class="btn btn-warning btn-sm btn-edit" data-id="${row.id}"><i class="bi bi-pencil"></i></button>
-                                    <button type="button" class="btn btn-danger btn-sm btn-delete" data-id="${row.id}"><i class="bi bi-trash"></i></button>
+                                    ${
+                                        row.is_active
+                                            ? `<button type="button" class="btn btn-danger btn-sm btn-delete" data-id="${row.id}"><i class="bi bi-trash"></i></button>`
+                                            : `<button type="button" class="btn btn-success btn-sm btn-activate" data-id="${row.id}"><i class="bi bi-check-circle"></i> Aktifkan</button>`
+                                    }
                                 </div>
                             `;
                     }
@@ -300,7 +312,7 @@ Template Penilaian
                             tbody.append(`
                                 <tr class="bg-info text-white">
                                     <td><strong>${mainIndex + 1}.${subIndex + 1}</strong></td>
-                                    <td class="ps-3"><strong>${sub.indikator}</strong> ${sub.is_nilai ? '<span class="badge bg-success">Dinilai</span>' : '<span class="badge bg-secondary">Kalkulasi</span>'}</td>
+                                    <td class="ps-3">${sub.indikator}</td>
                                 </tr>
                             `);
 
@@ -310,7 +322,7 @@ Template Penilaian
                                     tbody.append(`
                                         <tr class="bg-warning">
                                             <td><strong>${mainIndex + 1}.${subIndex + 1}.${subSubIndex + 1}</strong></td>
-                                            <td class="ps-5">${subSub.indikator} <span class="badge bg-success">Dinilai</span></td>
+                                            <td class="ps-5">${subSub.indikator}</td>
                                         </tr>
                                     `);
                                 });
@@ -386,12 +398,12 @@ $('#myTable').on('click', '.btn-edit', function () {
 
             Swal.fire({
                 title: "Apakah anda yakin?",
-                text: "Anda tidak akan dapat mengembalikan ini!",
+                text: "Anda tidak dapat menggunakan ini setelah nonaktifkan!",
                 icon: "warning",
                 showCancelButton: true,
                 confirmButtonColor: "#3085d6",
                 cancelButtonColor: "#d33",
-                confirmButtonText: "Ya, hapus!",
+                confirmButtonText: "Ya, Nonaktifkan!",
                 cancelButtonText: "Batal"
             }).then((result) => {
                 if (result.isConfirmed) {
@@ -421,6 +433,55 @@ $('#myTable').on('click', '.btn-edit', function () {
                                 title: 'Woops! Fatal Error.'
                             });
                         }
+                    });
+                }
+            });
+        });
+
+        // Aktifkan Template
+
+        $('#myTable').on('click', '.btn-activate', function (e) {
+            e.preventDefault();
+            var id = $(this).data('id');
+
+            $.ajax({
+                url: "{{ url('template-penilaian') }}/" + id + "/activate",
+                method: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function (response) {
+                    if (response.status) {
+                        $('#myModal').modal('hide');
+                        table.ajax.reload(null, false);
+                        Swal.fire({
+                            icon: "success",
+                            title: "Berhasil",
+                            text: response.message,
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Gagal",
+                            text: response.message,
+                            timer: 2500,
+                            showConfirmButton: false
+                        });
+                    }
+                },
+                error: function (xhr) {
+                    let msg = 'Woops! Fatal Error.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: msg,
+                        timer: 2500,
+                        showConfirmButton: false
                     });
                 }
             });

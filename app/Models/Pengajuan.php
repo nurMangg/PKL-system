@@ -24,7 +24,8 @@ class Pengajuan extends Model
         'file_balasan_path',
         'no_surat',
         'id_instrukturId',
-        'keterangan'
+        'keterangan',
+        'id_kepala_sekolah'
     ];
 
     // protected $table = 'pengajuan_surat';
@@ -52,6 +53,11 @@ class Pengajuan extends Model
     public function pengajuanDetail()
     {
         return $this->hasMany(PengajuanDetail::class, 'id_surat', 'id');
+    }
+
+    public function kepalaSekolah()
+    {
+        return $this->belongsTo(KepalaSekolah::class, 'id_kepala_sekolah', 'id_kepala_sekolah');
     }
 
 }

@@ -53,37 +53,43 @@ class TemplatePenilaianController extends Controller
             ->where('is_active', 1)
             ->orderBy('created_at', 'desc')
             ->paginate(10);
-        
+
         $jurusans = Jurusan::where('is_active', 1)->get();
         $thnAkademik = ThnAkademik::where('is_active', 1)->get();
         $gurus = Guru::where('is_active', 1)->get();
         $aktifAkademik = getActiveAcademicYear();
-            
+
         return compact('templates', 'jurusans', 'thnAkademik', 'aktifAkademik', 'gurus');
     }
-    
+
     /**
      * Simpan template baru
      */
     public function store(Request $request)
     {
         $validator = $this->validateTemplateRequest($request);
-        
+
         if ($validator->fails()) {
             return $this->jsonValidationError($validator);
         }
-        
+
         try {
+
+            if (TemplatePenilaian::where('jurusan_id', $request->jurusan_id)->where('is_active', 1)->exists()) {
+                return $this->jsonError('Template penilaian untuk jurusan ini sudah ada');
+            }
+
             DB::beginTransaction();
-            
+
+
             // Simpan template
             $template = $this->createTemplate($request);
-            
+
             // Simpan indikator utama dan sub-indikator (3 level)
             $this->saveIndicators($request->main_indicators, $template->id);
-            
+
             DB::commit();
-            
+
             return response()->json([
                 'status' => true,
                 'message' => self::MESSAGE_SUCCESS_CREATE,
@@ -95,7 +101,7 @@ class TemplatePenilaianController extends Controller
             return $this->jsonError($e->getMessage());
         }
     }
-    
+
     /**
      * Tampilkan detail template
      */
@@ -109,7 +115,7 @@ class TemplatePenilaianController extends Controller
             return $this->jsonError(self::MESSAGE_ERROR_LOAD_TEMPLATE);
         }
     }
-    
+
     /**
      * Tampilkan form untuk edit template
      */
@@ -123,29 +129,29 @@ class TemplatePenilaianController extends Controller
             return $this->jsonError(self::MESSAGE_ERROR_LOAD_TEMPLATE);
         }
     }
-    
+
     /**
      * Update template
      */
     public function update(Request $request, $id)
     {
         $validator = $this->validateTemplateUpdateRequest($request);
-        
+
         if ($validator->fails()) {
             return $this->jsonValidationError($validator);
         }
-        
+
         try {
             DB::beginTransaction();
-            
+
             // Update template
             $template = $this->updateTemplate($request, $id);
-            
+
             // Hapus dan update indikator
             $this->updateIndicators($request, $template);
-            
+
             DB::commit();
-            
+
             return response()->json([
                 'status' => true,
                 'message' => self::MESSAGE_SUCCESS_UPDATE,
@@ -157,7 +163,7 @@ class TemplatePenilaianController extends Controller
             return $this->jsonError($e->getMessage());
         }
     }
-    
+
     /**
      * Hapus template (soft delete)
      */
@@ -168,7 +174,13 @@ class TemplatePenilaianController extends Controller
             $template->is_active = 0;
             $template->updated_by = Auth::id();
             $template->save();
-            
+
+            $templateItems = TemplatePenilaianItem::where('template_id', $id)->get();
+            foreach ($templateItems as $item) {
+                $item->is_active = 0;
+                $item->save();
+            }
+
             return response()->json([
                 'status' => true,
                 'message' => self::MESSAGE_SUCCESS_DELETE
@@ -178,7 +190,7 @@ class TemplatePenilaianController extends Controller
             return $this->jsonError($e->getMessage());
         }
     }
-    
+
     /**
      * Gunakan template untuk membuat prg_obsvr
      */
@@ -188,22 +200,22 @@ class TemplatePenilaianController extends Controller
             'id_ta' => 'required|exists:thn_akademik,id_ta',
             'id_guru' => 'required|exists:guru,id_guru',
         ]);
-        
+
         if ($validator->fails()) {
             return $this->jsonValidationError($validator);
         }
-        
+
         try {
             DB::beginTransaction();
-            
+
             $template = TemplatePenilaian::with(['mainItems.children.children'])
                 ->findOrFail($id);
-            
+
             // Buat program observer dari template
             $this->createProgramObserver($template, $request);
-            
+
             DB::commit();
-            
+
             return response()->json([
                 'status' => true,
                 'message' => self::MESSAGE_SUCCESS_APPLY
@@ -221,14 +233,13 @@ class TemplatePenilaianController extends Controller
     public function getData(Request $request)
     {
         try {
-            $query = TemplatePenilaian::with(['jurusan', 'creator'])
-                ->where('is_active', 1);
-            
+            $query = TemplatePenilaian::with(['jurusan', 'creator']);
+
             // Filter berdasarkan jurusan jika ada
             if ($request->has('jurusan_id') && !empty($request->jurusan_id)) {
                 $query->where('jurusan_id', $request->jurusan_id);
             }
-            
+
             return DataTables::of($query)
                 ->addColumn('action', function ($template) {
                     return ''; // Action buttons akan dirender di JavaScript
@@ -251,7 +262,7 @@ class TemplatePenilaianController extends Controller
             $gurus = Guru::where('id_jurusan', $template->jurusan_id)
                 ->where('is_active', 1)
                 ->get();
-            
+
             return response()->json($gurus);
         } catch (\Exception $e) {
             Log::error('Error in TemplatePenilaianController@getGuruByTemplate: ' . $e->getMessage());
@@ -285,7 +296,7 @@ class TemplatePenilaianController extends Controller
         $template->created_by = Auth::id();
         $template->is_active = 1;
         $template->save();
-        
+
         return $template;
     }
 
@@ -300,7 +311,7 @@ class TemplatePenilaianController extends Controller
         $template->deskripsi = $request->deskripsi;
         $template->updated_by = Auth::id();
         $template->save();
-        
+
         return $template;
     }
 
@@ -317,7 +328,7 @@ class TemplatePenilaianController extends Controller
             $mainItem->is_nilai = false; // Main indicator tidak dinilai langsung
             $mainItem->is_active = 1;
             $mainItem->save();
-            
+
             // Simpan sub-indikator (Level 2) jika ada
             if (isset($main['sub_indicators']) && is_array($main['sub_indicators'])) {
                 foreach ($main['sub_indicators'] as $subKey => $sub) {
@@ -330,17 +341,17 @@ class TemplatePenilaianController extends Controller
                         $subItem->level = TemplatePenilaianItem::LEVEL_SUB;
                         $subItem->urutan = $subKey + 1;
                         $subItem->is_active = 1;
-                        
+
                         // Cek apakah ada level 3, jika tidak maka level 2 yang dinilai
-                        $hasLevel3 = isset($sub['sub_sub_indicators']) && 
-                                   is_array($sub['sub_sub_indicators']) && 
+                        $hasLevel3 = isset($sub['sub_sub_indicators']) &&
+                                   is_array($sub['sub_sub_indicators']) &&
                                    !empty(array_filter($sub['sub_sub_indicators'], function($item) {
                                        return !empty($item['text']);
                                    }));
-                        
+
                         $subItem->is_nilai = !$hasLevel3; // Dinilai jika tidak ada level 3
                         $subItem->save();
-                        
+
                         // Simpan sub-sub-indikator (Level 3) jika ada
                         if ($hasLevel3) {
                             foreach ($sub['sub_sub_indicators'] as $subSubKey => $subSub) {
@@ -375,19 +386,19 @@ class TemplatePenilaianController extends Controller
             $keepMainIds = [];
             $keepSubIds = [];
             $keepSubSubIds = [];
-            
+
             // Analisis struktur dari request untuk menentukan apa yang harus dipertahankan
             foreach ($request->main_indicators as $main) {
                 if (isset($main['id']) && !empty($main['id'])) {
                     $keepMainIds[] = $main['id'];
                 }
-                
+
                 if (isset($main['sub_indicators']) && is_array($main['sub_indicators'])) {
                     foreach ($main['sub_indicators'] as $sub) {
                         if (isset($sub['id']) && !empty($sub['id'])) {
                             $keepSubIds[] = $sub['id'];
                         }
-                        
+
                         if (isset($sub['sub_sub_indicators']) && is_array($sub['sub_sub_indicators'])) {
                             foreach ($sub['sub_sub_indicators'] as $subSub) {
                                 if (isset($subSub['id']) && !empty($subSub['id'])) {
@@ -398,7 +409,7 @@ class TemplatePenilaianController extends Controller
                     }
                 }
             }
-            
+
             // Hapus items yang tidak ada dalam request (mulai dari level terdalam)
             // 1. Hapus level 3 yang tidak ada dalam request
             TemplatePenilaianItem::where('template_id', $template->id)
@@ -410,7 +421,7 @@ class TemplatePenilaianController extends Controller
                     return $query; // Hapus semua level 3 jika tidak ada yang dipertahankan
                 })
                 ->delete();
-            
+
             // 2. Hapus level 2 yang tidak ada dalam request
             TemplatePenilaianItem::where('template_id', $template->id)
                 ->where('level', TemplatePenilaianItem::LEVEL_SUB)
@@ -421,7 +432,7 @@ class TemplatePenilaianController extends Controller
                     return $query; // Hapus semua level 2 jika tidak ada yang dipertahankan
                 })
                 ->delete();
-            
+
             // 3. Hapus level 1 yang tidak ada dalam request
             TemplatePenilaianItem::where('template_id', $template->id)
                 ->where('level', TemplatePenilaianItem::LEVEL_MAIN)
@@ -432,22 +443,22 @@ class TemplatePenilaianController extends Controller
                     return $query; // Hapus semua level 1 jika tidak ada yang dipertahankan
                 })
                 ->delete();
-            
+
             // Process indicators dari request
             foreach ($request->main_indicators as $mainKey => $main) {
                 // Process Main Indicator (Level 1)
                 $mainItem = $this->processMainIndicator($template->id, $main, $mainKey);
-                
+
                 // Process Sub Indicators (Level 2)
                 if (isset($main['sub_indicators']) && is_array($main['sub_indicators'])) {
                     foreach ($main['sub_indicators'] as $subKey => $sub) {
                         if (!empty($sub['text'])) {
                             $subItem = $this->processSubIndicator($template->id, $mainItem->id, $sub, $subKey, $main['sub_indicators']);
-                            
+
                             // Process Sub-Sub Indicators (Level 3)
                             if (isset($sub['sub_sub_indicators']) && is_array($sub['sub_sub_indicators'])) {
                                 $this->processSubSubIndicators($template->id, $mainItem->id, $subItem->id, $sub['sub_sub_indicators']);
-                                
+
                                 // Update sub indicator is_nilai berdasarkan keberadaan level 3
                                 $hasValidLevel3 = $this->hasValidLevel3Items($sub['sub_sub_indicators']);
                                 $subItem->is_nilai = !$hasValidLevel3;
@@ -461,7 +472,7 @@ class TemplatePenilaianController extends Controller
                     }
                 }
             }
-            
+
         } catch (\Exception $e) {
             Log::error('Error in updateIndicators: ' . $e->getMessage());
             throw $e;
@@ -480,7 +491,7 @@ class TemplatePenilaianController extends Controller
                 return $mainItem;
             }
         }
-        
+
         // Create new main indicator
         return $this->createMainIndicator($templateId, $mainData['text'], $order);
     }
@@ -502,12 +513,12 @@ class TemplatePenilaianController extends Controller
                 return $subItem;
             }
         }
-        
+
         // Create new sub indicator
-        $hasLevel3 = isset($subData['sub_sub_indicators']) && 
-                    is_array($subData['sub_sub_indicators']) && 
+        $hasLevel3 = isset($subData['sub_sub_indicators']) &&
+                    is_array($subData['sub_sub_indicators']) &&
                     $this->hasValidLevel3Items($subData['sub_sub_indicators']);
-        
+
         return $this->createSubIndicator($templateId, $parentId, $subData['text'], $order, $subData);
     }
 
@@ -544,13 +555,13 @@ class TemplatePenilaianController extends Controller
         if (!is_array($subSubIndicators)) {
             return false;
         }
-        
+
         foreach ($subSubIndicators as $subSub) {
             if (!empty($subSub['text'])) {
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -568,7 +579,7 @@ class TemplatePenilaianController extends Controller
         $mainItem->is_nilai = false; // Main indicator tidak pernah dinilai langsung
         $mainItem->is_active = 1;
         $mainItem->save();
-        
+
         return $mainItem;
     }
 
@@ -578,8 +589,8 @@ class TemplatePenilaianController extends Controller
     private function createSubIndicator($templateId, $parentId, $text, $order, $subData = [])
     {
         // Check if has valid level 3
-        $hasLevel3 = isset($subData['sub_sub_indicators']) && 
-                    is_array($subData['sub_sub_indicators']) && 
+        $hasLevel3 = isset($subData['sub_sub_indicators']) &&
+                    is_array($subData['sub_sub_indicators']) &&
                     $this->hasValidLevel3Items($subData['sub_sub_indicators']);
 
         $subItem = new TemplatePenilaianItem();
@@ -592,7 +603,7 @@ class TemplatePenilaianController extends Controller
         $subItem->is_nilai = !$hasLevel3; // Dinilai jika tidak ada level 3 yang valid
         $subItem->is_active = 1;
         $subItem->save();
-        
+
         return $subItem;
     }
 
@@ -612,7 +623,7 @@ class TemplatePenilaianController extends Controller
         $subSubItem->is_nilai = true; // Level 3 selalu dinilai
         $subSubItem->is_active = 1;
         $subSubItem->save();
-        
+
         return $subSubItem;
     }
 
@@ -622,8 +633,8 @@ class TemplatePenilaianController extends Controller
     private function getTemplateWithRelations($id)
     {
         return TemplatePenilaian::with([
-            'jurusan', 
-            'creator', 
+            'jurusan',
+            'creator',
             'mainItems' => function($query) {
                 $query->where('level', TemplatePenilaianItem::LEVEL_MAIN)
                       ->where('is_active', 1)
@@ -683,7 +694,7 @@ class TemplatePenilaianController extends Controller
             $mainPrgObsvr->created_by = Auth::id();
             $mainPrgObsvr->is_active = 1;
             $mainPrgObsvr->save();
-            
+
             // Create sub indicators
             foreach ($main->children as $sub) {
                 $subPrgObsvr = new PrgObsvr();
@@ -696,7 +707,7 @@ class TemplatePenilaianController extends Controller
                 $subPrgObsvr->created_by = Auth::id();
                 $subPrgObsvr->is_active = 1;
                 $subPrgObsvr->save();
-                
+
                 // Create sub-sub indicators if exists
                 foreach ($sub->level3Children as $subSub) {
                     $subSubPrgObsvr = new PrgObsvr();
@@ -735,5 +746,25 @@ class TemplatePenilaianController extends Controller
             'status' => false,
             'message' => self::MESSAGE_ERROR_GENERAL . $message
         ], 500);
+    }
+
+    public function activate($id)
+    {
+        $template = TemplatePenilaian::findOrFail($id);
+
+        if (TemplatePenilaian::where('jurusan_id', $template->jurusan_id)->where('is_active', 1)->exists()) {
+            return $this->jsonError('Template penilaian untuk jurusan ini sudah ada');
+        }
+
+        $template->is_active = 1;
+        $template->save();
+
+        $templateItems = TemplatePenilaianItem::where('template_id', $id)->get();
+        foreach ($templateItems as $item) {
+            $item->is_active = 1;
+            $item->save();
+        }
+
+        return response()->json(['status' => true, 'message' => 'Template penilaian berhasil diaktifkan']);
     }
 }

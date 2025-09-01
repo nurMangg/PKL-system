@@ -65,8 +65,8 @@ class PengajuanSuratController extends Controller
 
         // Tambahan: cek apakah siswa sudah pernah ditempatkan di perusahaan tujuan dan status penempatan selesai
         $sudahDitempatkan = Penempatan::where('nis', $nama)
-            ->where('id_dudi', $request->perusahaan_tujuan)
             ->where('status', 'selesai')
+            ->where('is_active', 1)
             ->exists();
 
         if ($sudahDitempatkan) {
@@ -508,6 +508,7 @@ public function approve(Request $request)
     // Ubah status menjadi "Disetujui"
     $pengajuan->status = 'Disetujui';
     $pengajuan->no_surat = $request->nomorSurat;
+    $pengajuan->id_kepala_sekolah = $request->ttd;
     $pengajuan->save();
 
     // Ambil data untuk surat

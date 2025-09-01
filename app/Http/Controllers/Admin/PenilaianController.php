@@ -925,22 +925,18 @@ class PenilaianController extends Controller
             $templates = TemplatePenilaian::with([
                 'mainItems' => function($query) {
                     $query->where('level', TemplatePenilaianItem::LEVEL_MAIN)
-                          ->where('is_active', 1)
                           ->orderBy('urutan');
                 },
                 'mainItems.children' => function($query) {
                     $query->where('level', TemplatePenilaianItem::LEVEL_SUB)
-                          ->where('is_active', 1)
                           ->orderBy('urutan');
                 },
                 'mainItems.children.level3Children' => function($query) {
                     $query->where('level', TemplatePenilaianItem::LEVEL_SUB_SUB)
-                          ->where('is_active', 1)
                           ->orderBy('urutan');
                 }
             ])
             ->where('jurusan_id', $siswa->id_jurusan)
-            ->where('is_active', 1)
             ->get();
 
             if ($templates->isEmpty()) {

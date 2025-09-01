@@ -443,6 +443,7 @@ class ProfilSiswaController extends Controller
     $siswa = Siswa::where('nis', Auth::user()->username)->first();
 
     $nilai = Penilaian::where('nis', $request->nis)
+                
                 ->where('is_active', 1)
                 ->first();
 

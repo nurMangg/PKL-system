@@ -50,6 +50,7 @@
                             <th>Perusahaan</th>
                             <th>Tanggal Mulai</th>
                             <th>Tanggal Selesai</th>
+                            <th>Lama PKL</th>
                             <th>Guru</th>
                             <th>Instruktur</th>
                             <th>Status</th>
@@ -106,6 +107,60 @@
                     {
                         data: 'tanggal_selesai',
                         name: 'tanggal_selesai'
+                    },
+                    {
+                        data: null,
+                        name: 'lama_pkl',
+                        render: function(data, type, row) {
+                            var tanggalMulai = row.tanggal_mulai;
+                            var tanggalSelesai = row.tanggal_selesai;
+                            if (!tanggalMulai) return '-';
+
+                            // Konversi ke objek Date (pastikan format yyyy-mm-dd)
+                            var mulai = new Date(tanggalMulai);
+                            var selesai = tanggalSelesai ? new Date(tanggalSelesai) : null;
+                            var hariIni = new Date();
+                            hariIni.setHours(0,0,0,0);
+
+                            // Jika tanggal mulai di masa depan, tampilkan 0 hari
+                            if (mulai > hariIni) {
+                                return '0 hari';
+                            }
+
+                            // Hitung total hari PKL (dari mulai sampai selesai, inklusif)
+                            var totalHari = 0;
+                            if (selesai) {
+                                // Jika tanggal selesai di masa depan, total hari = mulai - selesai
+                                totalHari = Math.floor((selesai - mulai) / (1000 * 60 * 60 * 24)) + 1;
+                                if (totalHari < 0) totalHari = 0;
+                            } else {
+                                // Jika belum selesai, total hari = mulai - hari ini
+                                totalHari = Math.floor((hariIni - mulai) / (1000 * 60 * 60 * 24)) + 1;
+                                if (totalHari < 0) totalHari = 0;
+                            }
+
+                            // Hitung sudah berapa lama PKL per hari ini (jika belum selesai)
+                            var sudahBerapaHari = 0;
+                            if (!selesai || selesai > hariIni) {
+                                sudahBerapaHari = Math.floor((hariIni - mulai) / (1000 * 60 * 60 * 24)) + 1;
+                                if (sudahBerapaHari < 0) sudahBerapaHari = 0;
+                            } else if (selesai && selesai <= hariIni) {
+                                sudahBerapaHari = totalHari;
+                            }
+
+                            // Tampilkan keterangan
+                            var result = '';
+                            if (selesai) {
+                                result = totalHari + ' hari';
+                                // Jika PKL masih berjalan (hari ini sebelum tanggal selesai)
+                                if (hariIni < selesai) {
+                                    result += ' (per hari ini: ' + sudahBerapaHari + ' hari)';
+                                }
+                            } else {
+                                result = totalHari + ' hari (per hari ini: ' + sudahBerapaHari + ' hari)';
+                            }
+                            return result;
+                        }
                     },
                     {
                         data: 'nama_guru',

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Pengajuan;
 use App\Models\PengajuanDetail;
 use App\Models\Siswa;
+use App\Models\KepalaSekolah;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -23,6 +24,8 @@ class SuratController extends Controller
         $siswa->map(function ($item) {
             $item->nama = Siswa::where('nis', $item->nis)->first()->nama;
         });
+
+        $surat->kepala_sekolah = KepalaSekolah::where('id_kepala_sekolah', $surat->id_kepala_sekolah)->first();
 
 
 

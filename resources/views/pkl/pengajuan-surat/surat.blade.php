@@ -69,7 +69,7 @@
     /* Letter header */
     .letter-header {
         margin-top: 10px;
-        font-size: 11px; /* Slightly smaller text */
+        font-size: 12px; /* Slightly smaller text */
     }
 
     .letter-header table {
@@ -208,10 +208,15 @@
         <div class="signature">
             <p>{{ \Carbon\Carbon::now()->locale('id_ID')->translatedFormat('d F Y') }}</p>
             <p>Kepala Sekolah,</p>
+            @if(isset($surat->kepala_sekolah->signature_pad) && $surat->kepala_sekolah->signature_pad)
+                <img src="{{ $surat->kepala_sekolah->signature_pad }}" alt="TTD Kepala Sekolah" style="width: 120px; height: auto; margin-bottom: 10px;">
+            @else
+                <br><br><br>
+            @endif
             <div class="name">
-                ADHI NUR ARIFIANTO, SH
+                {{ $surat->kepala_sekolah->nama }}
             </div>
-            <p>NIY. 5257</p>
+            <p>NIY. {{ $surat->kepala_sekolah->nip }}</p>
         </div>
     </div>
 

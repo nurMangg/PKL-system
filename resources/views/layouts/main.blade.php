@@ -27,6 +27,8 @@
     <link href="{{ asset('assets') }}/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
     <link href="{{ asset('assets') }}/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
     <link href="{{ asset('assets') }}/vendor/remixicon/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
     <!-- SweetAlert2 -->
     <link rel="stylesheet" href="{{ asset('assets/') }}/vendor/sweetalert2/sweetalert2.css">
 
@@ -163,6 +165,8 @@
     <!-- Vendor JS Files -->
     <script src="{{ asset('assets') }}/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('assets') }}/vendor/tinymce/tinymce.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
     <script src="{{ asset('assets') }}/vendor/php-email-form/validate.js"></script>
     <!-- SweetAlert2 -->
     <script src="{{ asset('assets/') }}/vendor/sweetalert2/sweetalert2.min.js"></script>
@@ -253,6 +257,7 @@
     </script>
 
     @yield('js')
+    @yield('scripts')
 
 </body>
 

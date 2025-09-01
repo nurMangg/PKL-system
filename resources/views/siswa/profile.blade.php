@@ -714,6 +714,10 @@
                 <div class="modal-body">
                     <form action="{{ route('d.upload') }}" method="POST" enctype="multipart/form-data">
                         @csrf
+                        <div class="alert alert-info" role="alert">
+                            <strong>Informasi:</strong> Silakan upload file balasan dari DUDI (format: PDF, DOC, DOCX, PNG). Pastikan juga memilih instruktur yang sesuai sebelum mengunggah file. Jika belum ada instruktur, tambahkan terlebih dahulu melalui tombol <b>Tambah Instruktur</b> di bawah.
+                        </div>
+
                         <div class="mb-3">
                             <label for="file" class="form-label">Pilih File:</label>
                             <input type="hidden" name="id_pengajuan" id="id_pengajuan">
@@ -1254,6 +1258,7 @@
                         // Menambahkan parameter tambahan yang akan dikirim ke server
                         d.nis =
                             '{{ $siswa->nis }}'; // Ambil nilai NIS dari elemen input atau lainnya
+                        d.id_ta = $('#id_ta').val();
                     }
                 },
                 columns: [{
@@ -2019,7 +2024,7 @@
                 var modal = new bootstrap.Modal(document.getElementById('keteranganModal'));
                 modal.show();
             }
-            
+
         $(document).ready(function() {
             // Modal untuk menampilkan keterangan penolakan surat
 

@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\QuesionerController;
 use App\Http\Controllers\Admin\SiswaController;
 use App\Http\Controllers\Admin\TahunAkademikController;
 use App\Http\Controllers\Admin\TemplatePenilaianController;
+use App\Http\Controllers\Admin\KepalaSekolahController;
 use App\Http\Controllers\Dudi\ProfilDudiController;
 use App\Http\Controllers\Guru\ProfilGuruController;
 use App\Http\Controllers\Instruktur\ProfilInstrukturController;
@@ -124,6 +125,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('template-penilaian/{id}/apply', [TemplatePenilaianController::class, 'applyTemplate'])->name('template-penilaian.apply');
         Route::get('template-penilaian/{id}/guru', [TemplatePenilaianController::class, 'getGuruByTemplate'])->name('template-penilaian.getGuru');
         Route::get('pengajuan-surat/guru/{id}', [SearchController::class, 'getDataByGuru'])->name('pengajuan.surat.guru');
+        Route::post('template-penilaian/{id}/activate', [TemplatePenilaianController::class, 'activate'])->name('template-penilaian.activate');
     });
 
     Route::group(['middleware' => [RoleMiddleware::class . ':1,2,4,5']], function () {
@@ -267,7 +269,18 @@ Route::group(['middleware' => ['auth']], function () {
             Route::post('/uploadExcel', 'uploadExcel')->name('master.quesioner.uploadExcel');
             Route::get('/downloadExcel', 'downloadExcel')->name('master.quesioner.downloadExcel');
         });
+
+        Route::group(['prefix' => 'kepala-sekolah', 'controller' => KepalaSekolahController::class], function () {
+            Route::get('/', 'index')->name('master.kepala-sekolah');
+            Route::get('/data', 'data')->name('master.kepala-sekolah.data');
+            Route::get('/list', 'list')->name('master.kepala-sekolah.list');
+            Route::post('/store', 'store')->name('master.kepala-sekolah.store');
+            Route::get('/{id}', 'show')->name('master.kepala-sekolah.show');
+            Route::put('/{id}', 'update')->name('master.kepala-sekolah.update');
+            Route::delete('/{id}', 'destroy')->name('master.kepala-sekolah.delete');
+        });
     });
+
 
     // PROFIL
     // siswa

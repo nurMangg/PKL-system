@@ -349,6 +349,15 @@
                             <input class="form-control" id="nomorSurat" name="nomorSurat" required>
                             <div class="invalid-feedback">Nomor surat wajib diisi.</div>
                         </div>
+                        <div class="mb-3">
+                            <label for="ttd" class="form-label">TTD</label>
+                            <select class="form-select" id="ttd" name="ttd" required>
+                                <option value="">Pilih TTD</option>
+                                <!-- Opsi akan diisi lewat JS -->
+                            </select>
+                            <div class="invalid-feedback">TTD wajib diisi.</div>
+
+                        </div>
                         <button type="submit" class="btn btn-primary">Simpan</button>
                     </form>
                 </div>
@@ -858,7 +867,7 @@
             });
         });
 
-        
+
     </script>
 
     <script>
@@ -1140,6 +1149,34 @@
             }
         }
     </script>
+
+<script>
+    // Data TTD, bisa diambil dari API atau didefinisikan di sini
+    var ttdOptions = []; // Contoh: [{id: 'KS202406010001', nama: 'Budi', jabatan: 'Kepala Sekolah'}]
+
+    // Contoh pengambilan data via AJAX (ganti URL sesuai kebutuhan)
+    $(document).ready(function() {
+        $.ajax({
+            url: "{{ route('master.kepala-sekolah.list') }}", // Ganti dengan route yang benar
+            method: "GET",
+            success: function(res) {
+                if (res.data && Array.isArray(res.data)) {
+                    ttdOptions = res.data;
+                    var $ttd = $('#ttd');
+                    $ttd.empty().append('<option value="">Pilih TTD</option>');
+                    ttdOptions.forEach(function(item) {
+                        $ttd.append(
+                            $('<option>', {
+                                value: item.id_kepala_sekolah,
+                                text: item.nama + (item.jabatan ? ' - ' + item.jabatan : '')
+                            })
+                        );
+                    });
+                }
+            }
+        });
+    });
+</script>
 @endsection
 
 @section('css')
